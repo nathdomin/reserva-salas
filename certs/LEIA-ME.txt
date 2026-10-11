@@ -1,0 +1,6 @@
+Coloque aqui o certificado do Supabase (arquivo .crt baixado em
+Database > Settings > SSL Configuration > Download certificate),
+salvo com o nome supabase-ca.crt.
+
+Esse certificado é público (não é segredo). Ele serve para a API confirmar
+que está mesmo conversando com o servidor do Supabase.

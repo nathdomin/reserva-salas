@@ -1,0 +1,311 @@
+import {
+  dataValida,
+  hojeNoFuso,
+  type Configuracoes,
+  type Reserva,
+  type Sala,
+} from '@reserva/shared';
+import { ChevronLeft, ChevronRight, DoorOpen, Plus } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router';
+import { Alert } from '../components/ui/Alert';
+import { Button, ButtonLink } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Select } from '../components/ui/Field';
+import { PageHeader } from '../components/ui/PageHeader';
+import { Panel } from '../components/ui/Panel';
+import { Spinner } from '../components/ui/Spinner';
+import { useSessao } from '../features/auth/session';
+import { CalendarioMes } from '../features/calendario/CalendarioMes';
+import { GradeHorarios, type ColunaGrade } from '../features/calendario/GradeHorarios';
+import { Legenda } from '../features/calendario/Legenda';
+import { useConfiguracoes, useReservasPeriodo } from '../features/reservas/api';
+import { useSalas } from '../features/salas/api';
+import {
+  dataDoInstante,
+  diaCurto,
+  diasDaSemana,
+  navegar,
+  periodoDaVisao,
+  tituloDoPeriodo,
+  VISOES,
+  type Visao,
+} from '../lib/calendario';
+import { cn } from '../lib/cn';
+import { errorMessage } from '../lib/forms';
+
+/** Sem visão na URL: semana no computador; dia no celular (cabe melhor na tela). */
+function lerVisao(valor: string | null): Visao {
+  if (valor === 'mes' || valor === 'dia' || valor === 'semana') return valor;
+  const celular =
+    typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 639px)').matches;
+  return celular ? 'dia' : 'semana';
+}
+
+export function CalendarPage() {
+  const [params, setParams] = useSearchParams();
+  const hoje = hojeNoFuso();
+  const visao = lerVisao(params.get('visao'));
+  const dataParam = params.get('data');
+  const data = dataParam && dataValida(dataParam) ? dataParam : hoje;
+  const salaId = params.get('sala') ?? '';
+
+  const { data: usuario } = useSessao();
+  const config = useConfiguracoes();
+  const salas = useSalas(false);
+  const periodo = periodoDaVisao(visao, data);
+  const reservas = useReservasPeriodo(
+    { dataInicio: periodo.inicio, dataFim: periodo.fim, salaId: salaId || undefined },
+    { manterAnterior: true },
+  );
+
+  type Mudancas = { visao?: Visao; data?: string; sala?: string };
+
+  /** Parâmetros do calendário mantendo o que não foi alterado (a URL guarda o estado). */
+  function montar(mudancas: Mudancas) {
+    const p = new URLSearchParams();
+    p.set('visao', mudancas.visao ?? visao);
+    p.set('data', mudancas.data ?? data);
+    const sala = mudancas.sala ?? salaId;
+    if (sala) p.set('sala', sala);
+    return p;
+  }
+
+  const link = (mudancas: Mudancas) => `/calendario?${montar(mudancas).toString()}`;
+  const ir = (mudancas: Mudancas) => setParams(montar(mudancas));
+
+  const salaSelecionada = salas.data?.find((s) => s.id === salaId);
+  const novaReservaHref = `/reservas/nova?${new URLSearchParams({
+    data: data < hoje ? hoje : data,
+    ...(salaId ? { salaId } : {}),
+  }).toString()}`;
+
+  const lista = reservas.data ?? [];
+
+  return (
+    <>
+      <PageHeader
+        title="Calendário"
+        description="Horários livres e ocupados de cada sala. Clique em um horário livre para reservar."
+        actions={
+          <ButtonLink to={novaReservaHref}>
+            <Plus aria-hidden className="size-4" strokeWidth={2.5} />
+            Nova reserva
+          </ButtonLink>
+        }
+      />
+
+      {/* Controles */}
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => ir({ data: hoje })}>
+            Hoje
+          </Button>
+          <div className="flex">
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="Período anterior"
+              onClick={() => ir({ data: navegar(visao, data, -1) })}
+            >
+              <ChevronLeft aria-hidden className="size-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="Próximo período"
+              onClick={() => ir({ data: navegar(visao, data, 1) })}
+            >
+              <ChevronRight aria-hidden className="size-5" />
+            </Button>
+          </div>
+          <h2 className="text-lg font-semibold" aria-live="polite">
+            {tituloDoPeriodo(visao, data)}
+          </h2>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div
+            role="group"
+            aria-label="Visualização"
+            className="flex rounded-md border border-ink/15 p-0.5"
+          >
+            {VISOES.map((v) => (
+              <button
+                key={v.valor}
+                type="button"
+                aria-pressed={visao === v.valor}
+                onClick={() => ir({ visao: v.valor })}
+                className={cn(
+                  'h-8 rounded px-3 text-sm font-semibold',
+                  visao === v.valor ? 'bg-ink text-paper' : 'text-ink hover:bg-ink/5',
+                )}
+              >
+                {v.rotulo}
+              </button>
+            ))}
+          </div>
+          <label className="sr-only" htmlFor="filtro-sala">
+            Sala
+          </label>
+          <Select
+            id="filtro-sala"
+            value={salaId}
+            onChange={(e) => ir({ sala: e.target.value })}
+            className="h-9 w-auto min-w-48"
+          >
+            <option value="">Todas as salas</option>
+            {(salas.data ?? []).map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nome}
+              </option>
+            ))}
+          </Select>
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Legenda />
+        {reservas.isSuccess && (
+          <p className="text-sm text-muted" role="status">
+            {lista.length === 0
+              ? 'Nenhuma reserva neste período: todos os horários estão livres.'
+              : `${lista.length} reserva${lista.length > 1 ? 's' : ''} neste período.`}
+            {reservas.isFetching && ' Atualizando…'}
+          </p>
+        )}
+      </div>
+
+      {(config.isError || reservas.isError || salas.isError) && (
+        <Alert
+          tone="error"
+          title={errorMessage(config.error ?? reservas.error ?? salas.error)}
+          className="mb-4"
+        />
+      )}
+
+      {(config.isPending || salas.isPending || reservas.isPending) &&
+        !(config.isError || reservas.isError || salas.isError) && (
+          <Spinner label="Carregando o calendário" />
+        )}
+
+      {config.data && salas.data && reservas.data && (
+        <ConteudoCalendario
+          visao={visao}
+          data={data}
+          hoje={hoje}
+          reservas={lista}
+          salas={salas.data}
+          salaSelecionada={salaSelecionada}
+          salaId={salaId}
+          usuarioId={usuario?.id}
+          config={config.data}
+          linkDoDia={(dia) => link({ visao: 'dia', data: dia })}
+        />
+      )}
+    </>
+  );
+}
+
+function ConteudoCalendario(props: {
+  visao: Visao;
+  data: string;
+  hoje: string;
+  reservas: Reserva[];
+  salas: Sala[];
+  salaSelecionada: Sala | undefined;
+  salaId: string;
+  usuarioId: string | undefined;
+  config: Configuracoes;
+  linkDoDia: (dia: string) => string;
+}) {
+  const { visao, data, hoje, reservas, salas, salaId, usuarioId, config } = props;
+  const agora = new Date();
+  const todasAsSalas = !salaId;
+
+  if (salas.length === 0 && reservas.length === 0) {
+    return (
+      <Panel>
+        <EmptyState
+          icon={DoorOpen}
+          title="Nenhuma sala disponível"
+          description="Ainda não há salas cadastradas. O administrador cadastra as salas em Administração › Salas."
+        />
+      </Panel>
+    );
+  }
+
+  if (visao === 'mes') {
+    return (
+      <CalendarioMes
+        data={data}
+        hoje={hoje}
+        reservas={reservas}
+        usuarioId={usuarioId}
+        mostrarSala={todasAsSalas}
+        linkDoDia={props.linkDoDia}
+      />
+    );
+  }
+
+  let colunas: ColunaGrade[];
+  if (visao === 'semana') {
+    colunas = diasDaSemana(data).map((dia) => ({
+      chave: dia,
+      data: dia,
+      destaque: dia === hoje,
+      reservas: reservas.filter((r) => dataDoInstante(r.inicio) === dia),
+      titulo: (
+        <Link
+          to={props.linkDoDia(dia)}
+          className={cn('font-semibold hover:underline', dia < hoje && 'text-muted')}
+        >
+          {diaCurto(dia)}
+        </Link>
+      ),
+    }));
+  } else if (!todasAsSalas) {
+    const sala = props.salaSelecionada ?? reservas[0]?.sala;
+    colunas = [
+      {
+        chave: salaId,
+        data,
+        sala: sala ? { id: salaId, nome: sala.nome } : undefined,
+        reservas,
+        titulo: <span className="font-semibold">{sala?.nome ?? 'Sala'}</span>,
+      },
+    ];
+  } else {
+    // Dia com todas as salas: uma coluna por sala (inclui sala desativada que ainda tenha reserva).
+    const mapa = new Map<string, { id: string; nome: string; detalhe: string }>();
+    for (const s of salas)
+      mapa.set(s.id, { id: s.id, nome: s.nome, detalhe: `até ${s.capacidade}` });
+    for (const r of reservas) {
+      if (!mapa.has(r.sala.id)) {
+        mapa.set(r.sala.id, { id: r.sala.id, nome: r.sala.nome, detalhe: 'desativada' });
+      }
+    }
+    colunas = [...mapa.values()].map((s) => ({
+      chave: s.id,
+      data,
+      sala: { id: s.id, nome: s.nome },
+      reservas: reservas.filter((r) => r.sala.id === s.id),
+      titulo: (
+        <>
+          <span className="block truncate font-semibold">{s.nome}</span>
+          <span className="block text-xs text-muted">{s.detalhe}</span>
+        </>
+      ),
+    }));
+  }
+
+  return (
+    <GradeHorarios
+      colunas={colunas}
+      config={config}
+      agora={agora}
+      usuarioId={usuarioId}
+      mostrarSala={visao === 'semana' && todasAsSalas}
+      salaFiltro={salaId || undefined}
+    />
+  );
+}

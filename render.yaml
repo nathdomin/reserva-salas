@@ -1,0 +1,48 @@
+# =====================================================================
+# Render — publicação do Reserva de Salas na internet (docs/RENDER.md)
+#
+# Usado em: Render > New > Blueprint > escolher este repositório.
+# Senhas e endereços (DATABASE_URL, APP_ORIGIN) NÃO ficam aqui: o Render pede os
+# valores na criação e os guarda como segredos.
+# =====================================================================
+services:
+  - type: web
+    name: reserva-salas
+    runtime: node
+    # "free" dorme após 15 min sem acesso (o 1º acesso depois leva ~1 min).
+    # Para uso diário da empresa, troque para um plano pago no painel do Render.
+    plan: free
+    # Não há região do Render na América do Sul; Virginia é a mais próxima do Supabase (São Paulo).
+    region: virginia
+    # --include=dev: as ferramentas de build (Vite, esbuild) são dependências de desenvolvimento.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    # Publica só quando você mandar (Manual Deploy), nunca a cada envio ao GitHub.
+    autoDeployTrigger: 'off'
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      # O Render exige que o servidor escute em todas as interfaces; a porta vem dele (PORT).
+      - key: HOST
+        value: 0.0.0.0
+      # Cadeia de proxies do Render: Cloudflare + proxy interno do Render.
+      # Confira o IP registrado após publicar (docs/RENDER.md, passo 6).
+      - key: TRUST_PROXY
+        value: '2'
+      - key: LOG_LEVEL
+        value: warn
+      - key: DATABASE_SSL
+        value: verify-full
+      - key: DATABASE_SSL_CA
+        value: certs/supabase-ca.crt
+      - key: DATABASE_POOL_MAX
+        value: '5'
+      # Ex.: https://reserva-salas.onrender.com (o endereço que o Render mostrar).
+      - key: APP_ORIGIN
+        sync: false
+      # URL do Session pooler do Supabase, com a senha (segredo).
+      - key: DATABASE_URL
+        sync: false

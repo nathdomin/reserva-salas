@@ -1,0 +1,2 @@
+# Scripts do PowerShell com quebra de linha do Windows.
+*.ps1 text eol=crlf

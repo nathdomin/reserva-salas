@@ -1,0 +1,33 @@
+# =====================================================================
+# Caddy — HTTPS na frente da API do Reserva de Salas (rede interna)
+#
+# Copie para C:\caddy\Caddyfile e troque "salas.suaempresa.interno" pelo nome
+# que a TI cadastrou no DNS interno. Esse nome deve ser o mesmo do APP_ORIGIN no .env.
+# Guia completo: docs/IMPLANTACAO.md
+# =====================================================================
+{
+	# Pasta fixa para certificados e chaves (o serviço do Windows roda como SYSTEM).
+	storage file_system C:/caddy/dados
+}
+
+salas.suaempresa.interno {
+	# OPÇÃO 1 (padrão): certificado emitido pela autoridade interna do próprio Caddy.
+	# O certificado raiz precisa ser instalado nos computadores da empresa (veja o guia).
+	tls internal
+
+	# OPÇÃO 2: certificado fornecido pela TI da empresa. Comente "tls internal" acima e use:
+	# tls C:/caddy/certs/salas.crt C:/caddy/certs/salas.key
+
+	encode zstd gzip
+
+	# A API escuta só nesta máquina (HOST=127.0.0.1). O Caddy repassa o IP real do usuário
+	# no X-Forwarded-For, lido pela API com TRUST_PROXY=loopback.
+	reverse_proxy 127.0.0.1:3333
+
+	log {
+		output file C:/caddy/logs/acesso.log {
+			roll_size 20MiB
+			roll_keep 10
+		}
+	}
+}

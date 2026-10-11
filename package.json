@@ -1,0 +1,41 @@
+{
+  "name": "reserva-salas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema interno de reserva de salas de reunião",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c red,gray \"npm run dev -w @reserva/api\" \"npm run dev -w @reserva/web\"",
+    "build": "npm run build -w @reserva/web && npm run build -w @reserva/api",
+    "start": "npm run start -w @reserva/api",
+    "db:setup": "npm run db:setup -w @reserva/api",
+    "db:migrate": "npm run db:migrate -w @reserva/api",
+    "admin:create": "npm run admin:create -w @reserva/api --",
+    "db:sql": "npm run db:sql -w @reserva/api",
+    "db:backup": "npm run db:backup -w @reserva/api --",
+    "db:restaurar": "npm run db:restaurar -w @reserva/api --",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run typecheck && npm run lint && npm run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.20.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^15.14.0",
+    "prettier": "^3.5.0",
+    "typescript": "~5.8.2",
+    "typescript-eslint": "^8.24.0"
+  }
+}

@@ -88,7 +88,7 @@ async function main() {
       process.exit(1);
     }
 
-    console.log('\nCriação do administrador do sistema de reserva de salas');
+    console.log('\nCriação do administrador do MeetKof');
     if (forcar) console.log('(modo --force: recuperação de acesso)');
     console.log('');
 

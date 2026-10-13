@@ -7,7 +7,7 @@ PowerShell, na pasta do projeto.
 
 | Quando                    | O quê                                                                                          |
 | ------------------------- | ---------------------------------------------------------------------------------------------- |
-| Todo dia                  | Backup automático (tarefa `Reserva de Salas - Backup`).                                        |
+| Todo dia                  | Backup automático (tarefa `MeetKof - Backup`).                                                 |
 | Toda semana               | Conferir `logs\backup.log` (linhas `OK`) e copiar o backup mais recente para fora do servidor. |
 | Todo mês                  | Testar a restauração de um backup. Rodar `npm audit`. Ver o tamanho do banco.                  |
 | A cada 6 meses            | Revisar administradores e usuários ativos. Trocar as senhas do banco.                          |
@@ -30,7 +30,7 @@ Criado por `deploy\registrar-tarefas.ps1` ([IMPLANTACAO.md](IMPLANTACAO.md)). To
 Se o backup falhar, nada é apagado e a linha começa com `ERRO`. Para rodar agora:
 
 ```powershell
-Start-ScheduledTask -TaskName 'Reserva de Salas - Backup'
+Start-ScheduledTask -TaskName 'MeetKof - Backup'
 Get-Content logs\backup.log -Tail 5
 ```
 
@@ -117,7 +117,7 @@ restaure sem `--substituir`.
   `DATABASE_MIGRATION_URL` (ou a `DATABASE_URL`, se a API ainda usa o `postgres`).
 - **`reserva_app`:** execute de novo `database\papel-aplicacao.sql` com a nova senha e atualize a
   `DATABASE_URL`.
-- Reinicie a API (`deploy\parar-servidor.ps1` e `Start-ScheduledTask -TaskName 'Reserva de Salas - API'`).
+- Reinicie a API (`deploy\parar-servidor.ps1` e `Start-ScheduledTask -TaskName 'MeetKof - API'`).
 
 ### Senhas das pessoas
 

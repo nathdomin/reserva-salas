@@ -1,9 +1,9 @@
 ﻿<#
 .SYNOPSIS
-  Inicia a API do Reserva de Salas (versão de produção) e a reinicia se ela parar.
+  Inicia a API do MeetKof (versão de produção) e a reinicia se ela parar.
 
 .DESCRIPTION
-  Executado pela tarefa agendada "Reserva de Salas - API" (criada por registrar-tarefas.ps1).
+  Executado pela tarefa agendada "MeetKof - API" (criada por registrar-tarefas.ps1).
   Também pode ser executado à mão para testar:
     powershell -ExecutionPolicy Bypass -File deploy\iniciar-servidor.ps1
 

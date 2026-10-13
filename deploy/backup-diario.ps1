@@ -1,9 +1,9 @@
 ﻿<#
 .SYNOPSIS
-  Backup diário dos dados do Reserva de Salas, com limpeza de backups e logs antigos.
+  Backup diário dos dados do MeetKof, com limpeza de backups e logs antigos.
 
 .DESCRIPTION
-  Executado pela tarefa agendada "Reserva de Salas - Backup" (criada por registrar-tarefas.ps1).
+  Executado pela tarefa agendada "MeetKof - Backup" (criada por registrar-tarefas.ps1).
   Também pode ser executado à mão:
     powershell -ExecutionPolicy Bypass -File deploy\backup-diario.ps1
 

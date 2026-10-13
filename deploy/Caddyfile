@@ -1,5 +1,5 @@
 # =====================================================================
-# Caddy — HTTPS na frente da API do Reserva de Salas (rede interna)
+# Caddy — HTTPS na frente da API do MeetKof (rede interna)
 #
 # Copie para C:\caddy\Caddyfile e troque "salas.suaempresa.interno" pelo nome
 # que a TI cadastrou no DNS interno. Esse nome deve ser o mesmo do APP_ORIGIN no .env.

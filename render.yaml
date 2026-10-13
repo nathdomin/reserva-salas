@@ -1,5 +1,5 @@
 # =====================================================================
-# Render — publicação do Reserva de Salas na internet (docs/RENDER.md)
+# Render — publicação do MeetKof na internet (docs/RENDER.md)
 #
 # Usado em: Render > New > Blueprint > escolher este repositório.
 # Senhas e endereços (DATABASE_URL, APP_ORIGIN) NÃO ficam aqui: o Render pede os

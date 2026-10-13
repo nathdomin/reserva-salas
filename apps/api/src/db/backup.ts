@@ -61,7 +61,7 @@ export async function gerarBackup(client: pg.ClientBase, agora = new Date()): Pr
 
     const partes = [
       `${MARCADOR}${JSON.stringify(cabecalho)}`,
-      `-- Backup dos dados do sistema Reserva de Salas, gerado em ${cabecalho.geradoEm}.`,
+      `-- Backup dos dados do sistema MeetKof, gerado em ${cabecalho.geradoEm}.`,
       '-- CONTÉM DADOS PESSOAIS. Guarde em local protegido e não envie por e-mail.',
       '-- Restaurar: npm run db:restaurar -- <arquivo>   (veja docs/MANUTENCAO.md)',
       '',
@@ -115,7 +115,7 @@ export async function restaurarBackup(
 ): Promise<CabecalhoBackup> {
   const cabecalho = lerCabecalho(conteudo.replace(/\r\n/g, '\n'));
   if (!cabecalho) {
-    throw new RestauracaoRecusada('O arquivo não é um backup do sistema Reserva de Salas.');
+    throw new RestauracaoRecusada('O arquivo não é um backup do sistema MeetKof.');
   }
 
   const { rows: aplicadas } = await client.query<{ nome: string }>(

@@ -13,7 +13,7 @@ import { MIGRATION_LOCK_ID, type MigrationFile } from './migrate';
 export function gerarSqlConsolidado(migracoes: MigrationFile[]): string {
   const partes: string[] = [
     `-- =====================================================================
--- Reserva de Salas — estrutura completa do banco (PostgreSQL / Supabase)
+-- MeetKof — estrutura completa do banco (PostgreSQL / Supabase)
 --
 -- ARQUIVO GERADO por "npm run db:sql" a partir de apps/api/src/db/migrations.
 -- Não edite à mão: altere as migrações e gere de novo.

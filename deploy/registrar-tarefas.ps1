@@ -1,14 +1,14 @@
 ﻿<#
 .SYNOPSIS
-  Cria as tarefas agendadas do Reserva de Salas no servidor Windows.
+  Cria as tarefas agendadas do MeetKof no servidor Windows.
 
 .DESCRIPTION
   Execute UMA vez, como administrador, na pasta do projeto no servidor:
     powershell -ExecutionPolicy Bypass -File deploy\registrar-tarefas.ps1
 
   Cria (ou atualiza):
-    "Reserva de Salas - API"     inicia a API quando o Windows liga (iniciar-servidor.ps1)
-    "Reserva de Salas - Backup"  backup diário dos dados (backup-diario.ps1)
+    "MeetKof - API"     inicia a API quando o Windows liga (iniciar-servidor.ps1)
+    "MeetKof - Backup"  backup diário dos dados (backup-diario.ps1)
 
   As duas rodam com a conta "Serviço Local" (LOCAL SERVICE), que tem poucas permissões no
   Windows, e não com a conta de um administrador. O script dá a essa conta:
@@ -64,10 +64,10 @@ $gatilhoApi = New-ScheduledTaskTrigger -AtStartup
 $configApi = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) `
   -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) `
   -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -MultipleInstances IgnoreNew
-Register-ScheduledTask -TaskName 'Reserva de Salas - API' -Force `
-  -Description 'API e site do sistema Reserva de Salas (deploy\iniciar-servidor.ps1).' `
+Register-ScheduledTask -TaskName 'MeetKof - API' -Force `
+  -Description 'API e site do sistema MeetKof (deploy\iniciar-servidor.ps1).' `
   -Action $acaoApi -Trigger $gatilhoApi -Principal $principal -Settings $configApi | Out-Null
-Write-Host "Tarefa 'Reserva de Salas - API' registrada (inicia junto com o Windows)."
+Write-Host "Tarefa 'MeetKof - API' registrada (inicia junto com o Windows)."
 
 # --- Backup ------------------------------------------------------------
 if (-not $SemBackup) {
@@ -76,13 +76,13 @@ if (-not $SemBackup) {
   $gatilhoBackup = New-ScheduledTaskTrigger -Daily -At $HorarioBackup
   $configBackup = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 30) `
     -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew
-  Register-ScheduledTask -TaskName 'Reserva de Salas - Backup' -Force `
-    -Description 'Backup diário dos dados do Reserva de Salas (deploy\backup-diario.ps1).' `
+  Register-ScheduledTask -TaskName 'MeetKof - Backup' -Force `
+    -Description 'Backup diário dos dados do MeetKof (deploy\backup-diario.ps1).' `
     -Action $acaoBackup -Trigger $gatilhoBackup -Principal $principal -Settings $configBackup | Out-Null
-  Write-Host "Tarefa 'Reserva de Salas - Backup' registrada (todos os dias às $HorarioBackup)."
+  Write-Host "Tarefa 'MeetKof - Backup' registrada (todos os dias às $HorarioBackup)."
 }
 
 Write-Host ''
-Write-Host "Para iniciar agora:  Start-ScheduledTask -TaskName 'Reserva de Salas - API'"
-Write-Host "Para testar o backup: Start-ScheduledTask -TaskName 'Reserva de Salas - Backup'"
+Write-Host "Para iniciar agora:  Start-ScheduledTask -TaskName 'MeetKof - API'"
+Write-Host "Para testar o backup: Start-ScheduledTask -TaskName 'MeetKof - Backup'"
 Write-Host "Acompanhe em: $pastaLogs"

@@ -58,7 +58,7 @@ Esse arquivo é **público** (não é senha) e vai junto para o GitHub.
    `.gitignore` já os exclui). Se aparecerem, pare e me avise.
 
    ```powershell
-   git commit -m "Reserva de Salas"
+   git commit -m "MeetKof"
    git branch -M main
    git remote add origin https://github.com/SEU-USUARIO/reserva-salas.git
    git push -u origin main

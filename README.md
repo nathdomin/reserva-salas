@@ -1,4 +1,4 @@
-# Reserva de Salas
+# MeetKof
 
 Sistema interno de reserva de salas de reunião do setor administrativo: calendário das salas,
 reservas sem conflito de horário, administração de salas e usuários e histórico de alterações.

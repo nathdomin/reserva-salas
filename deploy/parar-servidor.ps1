@@ -1,18 +1,18 @@
 ﻿<#
 .SYNOPSIS
-  Para a API do Reserva de Salas (tarefa agendada e processo do Node).
+  Para a API do MeetKof (tarefa agendada e processo do Node).
 
 .DESCRIPTION
   Use antes de atualizar o sistema. Execute como administrador:
     powershell -ExecutionPolicy Bypass -File deploy\parar-servidor.ps1
-  Para iniciar de novo: Start-ScheduledTask -TaskName 'Reserva de Salas - API'
+  Para iniciar de novo: Start-ScheduledTask -TaskName 'MeetKof - API'
 #>
 #Requires -RunAsAdministrator
 $ErrorActionPreference = 'Stop'
 
 $raiz = Split-Path -Parent $PSScriptRoot
 $servidor = Join-Path $raiz 'apps\api\dist\server.js'
-$nomeTarefa = 'Reserva de Salas - API'
+$nomeTarefa = 'MeetKof - API'
 
 if (Get-ScheduledTask -TaskName $nomeTarefa -ErrorAction SilentlyContinue) {
   Stop-ScheduledTask -TaskName $nomeTarefa

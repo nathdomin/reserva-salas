@@ -36,7 +36,7 @@ try {
   const caminho = path.resolve(process.env.INIT_CWD ?? process.cwd(), arquivo);
   const conteudo = readFileSync(caminho, 'utf8');
   const cab = lerCabecalho(conteudo.replace(/\r\n/g, '\n'));
-  if (!cab) throw new Error('O arquivo não é um backup do sistema Reserva de Salas.');
+  if (!cab) throw new Error('O arquivo não é um backup do sistema MeetKof.');
 
   const env = loadEnv();
   // No pooler do Supabase o host é o mesmo para todos os projetos da região: o que identifica

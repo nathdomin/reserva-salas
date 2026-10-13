@@ -1,5 +1,5 @@
 -- =====================================================================
--- Reserva de Salas — consultas úteis para o administrador
+-- MeetKof — consultas úteis para o administrador
 --
 -- Use no Supabase > SQL Editor. Todas são SOMENTE LEITURA (não alteram nada).
 -- Horários são exibidos no horário de Brasília. Execute uma consulta por vez

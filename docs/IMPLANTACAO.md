@@ -128,7 +128,7 @@ certificado HTTPS automaticamente.
 6. Libere a porta no Firewall do Windows do servidor (somente redes de domínio/privadas):
 
    ```powershell
-   New-NetFirewallRule -DisplayName "Reserva de Salas (HTTPS)" -Direction Inbound `
+   New-NetFirewallRule -DisplayName "MeetKof (HTTPS)" -Direction Inbound `
      -Protocol TCP -LocalPort 443 -Action Allow -Profile Domain,Private
    ```
 
@@ -141,16 +141,16 @@ PowerShell **como administrador**, na pasta do projeto:
 ```powershell
 cd C:\reserva-salas
 powershell -ExecutionPolicy Bypass -File deploy\registrar-tarefas.ps1
-Start-ScheduledTask -TaskName 'Reserva de Salas - API'
+Start-ScheduledTask -TaskName 'MeetKof - API'
 ```
 
 O script cria duas tarefas agendadas, executadas pela conta **Serviço Local** (poucas
 permissões, não é a conta de um administrador):
 
-| Tarefa                      | O que faz                                                 |
-| --------------------------- | --------------------------------------------------------- |
-| `Reserva de Salas - API`    | Inicia a API com o Windows e a reinicia se ela parar.     |
-| `Reserva de Salas - Backup` | Backup diário às 02:00 (mude com `-HorarioBackup 23:30`). |
+| Tarefa             | O que faz                                                 |
+| ------------------ | --------------------------------------------------------- |
+| `MeetKof - API`    | Inicia a API com o Windows e a reinicia se ela parar.     |
+| `MeetKof - Backup` | Backup diário às 02:00 (mude com `-HorarioBackup 23:30`). |
 
 Ele também restringe o `.env` e a pasta `backups` a administradores e ao próprio serviço.
 Os logs ficam em `C:\reserva-salas\logs`.
@@ -173,7 +173,7 @@ Os logs ficam em `C:\reserva-salas\logs`.
 4. `npm ci` → `npm run build` → `npm run db:migrate`.
 5. Se a versão nova criou tabelas e você usa o `reserva_app`, execute de novo o
    `database\papel-aplicacao.sql` no Supabase.
-6. `Start-ScheduledTask -TaskName 'Reserva de Salas - API'` e confira o passo 4.
+6. `Start-ScheduledTask -TaskName 'MeetKof - API'` e confira o passo 4.
 
 Se algo der errado, volte os arquivos da versão anterior e repita os passos 4 e 6. Se a versão
 nova aplicou migrações e a anterior não funcionar com o banco atualizado, restaure o backup do

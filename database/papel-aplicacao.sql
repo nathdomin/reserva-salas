@@ -1,5 +1,5 @@
 -- =====================================================================
--- Reserva de Salas — usuário do banco só para a aplicação (recomendado em produção)
+-- MeetKof — usuário do banco só para a aplicação (recomendado em produção)
 --
 -- Por quê: hoje a API conecta como "postgres", o dono de tudo. Com um usuário próprio,
 -- de permissões mínimas, um eventual defeito ou vazamento da senha da aplicação

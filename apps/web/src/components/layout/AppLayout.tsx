@@ -1,5 +1,5 @@
 import { Menu, Plus, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { useSessao } from '../../features/auth/session';
 import { ButtonLink } from '../ui/Button';
@@ -11,20 +11,40 @@ export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const { data: usuario } = useSessao();
+  const abrirMenuRef = useRef<HTMLButtonElement>(null);
+  const fecharMenuRef = useRef<HTMLButtonElement>(null);
+  const devolverFocoRef = useRef(false);
 
-  // Fecha o menu móvel ao trocar de página.
+  /** Fecha o menu pelo botão, pelo fundo ou pelo Esc, devolvendo o foco a quem o abriu. */
+  function fecharMenu() {
+    devolverFocoRef.current = true;
+    setMenuOpen(false);
+  }
+
+  // Fecha o menu móvel ao trocar de página (o foco segue com a nova página).
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
 
-  // Fecha o menu móvel com Esc.
+  // Menu aberto: foco no botão de fechar, Esc fecha e a página de trás não rola.
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen) {
+      // Só depois de fechar: enquanto o menu está aberto, a barra superior fica inerte.
+      if (devolverFocoRef.current) abrirMenuRef.current?.focus();
+      devolverFocoRef.current = false;
+      return;
+    }
+    fecharMenuRef.current?.focus();
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key === 'Escape') fecharMenu();
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = overflowAnterior;
+    };
   }, [menuOpen]);
 
   // Garantido pelo RequireAuth; null só por um instante durante o logout.
@@ -34,13 +54,17 @@ export function AppLayout() {
     <div className="min-h-dvh lg:grid lg:grid-cols-[260px_1fr]">
       <a
         href="#conteudo"
+        inert={menuOpen}
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-paper focus:px-3 focus:py-2"
       >
         Pular para o conteúdo
       </a>
 
       {/* Barra superior (celular e tablet) */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-line bg-paper px-4 lg:hidden">
+      <header
+        inert={menuOpen}
+        className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-line bg-paper px-4 lg:hidden"
+      >
         <Link to="/" aria-label="Início">
           <BrandMark />
         </Link>
@@ -50,6 +74,7 @@ export function AppLayout() {
             <span className="hidden sm:inline">Nova reserva</span>
           </ButtonLink>
           <button
+            ref={abrirMenuRef}
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label="Abrir menu"
@@ -79,8 +104,9 @@ export function AppLayout() {
           <button
             type="button"
             aria-label="Fechar menu"
+            tabIndex={-1}
             className="absolute inset-0 bg-ink/40"
-            onClick={() => setMenuOpen(false)}
+            onClick={fecharMenu}
           />
           <div
             id="menu-movel"
@@ -92,8 +118,9 @@ export function AppLayout() {
             <div className="flex items-center justify-between">
               <BrandMark />
               <button
+                ref={fecharMenuRef}
                 type="button"
-                onClick={() => setMenuOpen(false)}
+                onClick={fecharMenu}
                 aria-label="Fechar menu"
                 className="grid size-10 place-items-center rounded-md hover:bg-canvas"
               >
@@ -108,7 +135,7 @@ export function AppLayout() {
         </div>
       )}
 
-      <main id="conteudo" className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+      <main id="conteudo" inert={menuOpen} className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
         <div className="mx-auto max-w-6xl">
           <Outlet />
         </div>

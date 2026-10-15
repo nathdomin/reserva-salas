@@ -10,14 +10,15 @@ const base =
   'disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-brand text-paper hover:bg-brand-strong active:bg-brand-strong',
+  primary: 'bg-brand-strong text-paper hover:bg-brand-deep active:bg-brand-deep',
   secondary: 'border border-ink/15 bg-paper text-ink hover:border-ink/40',
   ghost: 'text-ink hover:bg-ink/5',
 };
 
 const sizes: Record<Size, string> = {
   md: 'h-10 px-4 text-[15px]',
-  sm: 'h-8 px-3 text-sm',
+  // Em telas de toque o botão pequeno sobe para 40px de altura (alvo confortável para o dedo).
+  sm: 'h-8 px-3 text-sm pointer-coarse:h-10',
 };
 
 export function buttonClasses(variant: Variant = 'primary', size: Size = 'md', extra?: string) {

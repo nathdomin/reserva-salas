@@ -63,10 +63,16 @@ export function ProximasReunioes() {
         })}
       </ul>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-line pt-3 text-sm font-medium">
-        <Link to="/minhas-reservas" className="hover:underline">
+        <Link
+          to="/minhas-reservas"
+          className="inline-flex items-center hover:underline pointer-coarse:min-h-10"
+        >
           Ver todas as minhas reservas
         </Link>
-        <Link to="/calendario" className="hover:underline">
+        <Link
+          to="/calendario"
+          className="inline-flex items-center hover:underline pointer-coarse:min-h-10"
+        >
           Abrir o calendário
         </Link>
       </div>

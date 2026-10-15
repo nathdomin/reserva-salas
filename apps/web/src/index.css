@@ -3,12 +3,14 @@
 /*
  * Paleta definida pelo cliente:
  *   #F40009 (destaque) · #FFFFFF · #000000 · #F5F5F5
- * brand-strong é um tom mais escuro do vermelho, usado em hover e em texto vermelho
- * pequeno, onde o #F40009 puro não atinge o contraste mínimo (4,5:1) sobre branco.
+ * brand-strong é um tom mais escuro do vermelho, usado no fundo dos botões e em texto
+ * vermelho pequeno, onde o #F40009 puro não atinge o contraste mínimo (4,5:1) com o
+ * branco (fica em ~4,3:1). brand-deep é o hover/pressionado dos botões.
  */
 @theme {
   --color-brand: #f40009;
   --color-brand-strong: #c80008;
+  --color-brand-deep: #a00006;
   --color-brand-soft: #fff0f0;
   --color-ink: #000000;
   --color-paper: #ffffff;

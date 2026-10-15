@@ -40,7 +40,7 @@ export function UserMenu({
           onClick={onNavigate}
           className={({ isActive }) =>
             cn(
-              'flex h-9 items-center gap-3 rounded-md px-3 text-sm transition-colors',
+              'flex h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors',
               isActive
                 ? 'bg-brand-soft font-semibold'
                 : 'text-ink/75 hover:bg-canvas hover:text-ink',
@@ -54,7 +54,7 @@ export function UserMenu({
           type="button"
           onClick={sair}
           disabled={logout.isPending}
-          className="flex h-9 items-center gap-3 rounded-md px-3 text-left text-sm text-ink/75 transition-colors hover:bg-canvas hover:text-ink disabled:opacity-50"
+          className="flex h-10 items-center gap-3 rounded-md px-3 text-left text-sm text-ink/75 transition-colors hover:bg-canvas hover:text-ink disabled:opacity-50"
         >
           <LogOut aria-hidden className="size-4 text-ink/50" />
           {logout.isPending ? 'Saindo…' : 'Sair'}

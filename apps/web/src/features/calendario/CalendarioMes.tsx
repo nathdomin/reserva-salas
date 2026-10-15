@@ -72,8 +72,8 @@ export function CalendarioMes({
                 to={linkDoDia(dia)}
                 aria-label={`${nomeDia}: ${resumo}`}
                 className={cn(
-                  'grid size-7 place-items-center rounded-full text-sm hover:bg-canvas',
-                  dia === hoje && 'bg-brand font-semibold text-paper hover:bg-brand-strong',
+                  'grid size-7 place-items-center rounded-full text-sm hover:bg-canvas pointer-coarse:size-9',
+                  dia === hoje && 'bg-brand-strong font-semibold text-paper hover:bg-brand-deep',
                   dia !== hoje && (!doMes || passado) && 'text-muted',
                 )}
               >

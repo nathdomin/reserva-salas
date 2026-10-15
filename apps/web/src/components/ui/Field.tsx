@@ -9,9 +9,14 @@ import {
 } from 'react';
 import { cn } from '../../lib/cn';
 
+/*
+ * Fonte de 16px no celular: abaixo disso o Safari do iPhone dá zoom ao focar o campo.
+ * O foco usa o contorno global (:focus-visible em index.css) além da borda escura.
+ * Borda ink/45: contraste mínimo de 3:1 com o fundo branco para o campo ser percebido.
+ */
 const controlBase =
-  'block h-10 w-full rounded-md border bg-paper px-3 text-[15px] text-ink placeholder:text-muted/70 ' +
-  'transition-colors focus:border-ink focus:outline-none disabled:bg-canvas disabled:text-muted';
+  'block h-10 w-full rounded-md border bg-paper px-3 text-base text-ink placeholder:text-muted sm:text-[15px] ' +
+  'transition-colors focus:border-ink disabled:bg-canvas disabled:text-muted';
 
 export function Input({
   className,
@@ -20,7 +25,7 @@ export function Input({
 }: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
   return (
     <input
-      className={cn(controlBase, invalid ? 'border-brand' : 'border-ink/20', className)}
+      className={cn(controlBase, invalid ? 'border-brand' : 'border-ink/45', className)}
       aria-invalid={invalid || undefined}
       {...props}
     />
@@ -35,7 +40,7 @@ export function Select({
 }: SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean }) {
   return (
     <select
-      className={cn(controlBase, 'pr-8', invalid ? 'border-brand' : 'border-ink/20', className)}
+      className={cn(controlBase, 'pr-8', invalid ? 'border-brand' : 'border-ink/45', className)}
       aria-invalid={invalid || undefined}
       {...props}
     >
@@ -52,9 +57,9 @@ export function Textarea({
   return (
     <textarea
       className={cn(
-        'block min-h-20 w-full rounded-md border bg-paper px-3 py-2 text-[15px] text-ink',
-        'placeholder:text-muted/70 focus:border-ink focus:outline-none',
-        invalid ? 'border-brand' : 'border-ink/20',
+        'block min-h-20 w-full rounded-md border bg-paper px-3 py-2 text-base text-ink sm:text-[15px]',
+        'placeholder:text-muted focus:border-ink',
+        invalid ? 'border-brand' : 'border-ink/45',
         className,
       )}
       aria-invalid={invalid || undefined}

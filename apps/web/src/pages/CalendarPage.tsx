@@ -136,7 +136,7 @@ export function CalendarPage() {
                 aria-pressed={visao === v.valor}
                 onClick={() => ir({ visao: v.valor })}
                 className={cn(
-                  'h-8 rounded px-3 text-sm font-semibold',
+                  'h-8 rounded px-3 text-sm font-semibold pointer-coarse:h-10',
                   visao === v.valor ? 'bg-ink text-paper' : 'text-ink hover:bg-ink/5',
                 )}
               >
@@ -151,7 +151,7 @@ export function CalendarPage() {
             id="filtro-sala"
             value={salaId}
             onChange={(e) => ir({ sala: e.target.value })}
-            className="h-9 w-auto min-w-48"
+            className="h-9 w-auto min-w-48 pointer-coarse:h-10"
           >
             <option value="">Todas as salas</option>
             {(salas.data ?? []).map((s) => (

@@ -13,8 +13,10 @@
 --   Nada mais: não cria tabelas, não altera estrutura, não acessa outros schemas.
 --
 -- Como usar (Supabase > SQL Editor), DEPOIS de criar as tabelas (supabase.sql ou db:migrate):
---   1. Troque a senha na linha marcada abaixo (mínimo 16 caracteres; guarde-a com segurança).
---   2. Cole TODO o conteúdo e clique em Run.
+--   1. Cole TODO o conteúdo no SQL Editor e, LÁ, troque a senha na linha marcada abaixo
+--      (mínimo 16 caracteres; guarde-a com segurança). NUNCA salve a senha neste arquivo:
+--      ele vai para o GitHub ("npm run check" recusa o arquivo com a senha trocada).
+--   2. Clique em Run e feche a aba sem salvar a consulta.
 --   3. No .env: DATABASE_URL com o usuário "reserva_app.<id-do-projeto>" e esta senha, e
 --      DATABASE_MIGRATION_URL com o usuário "postgres" (veja docs/BANCO.md).
 -- Pode ser executado de novo (por exemplo, para trocar a senha ou após uma nova migração).

@@ -49,6 +49,7 @@ Os valores ficam na tabela `reserva.configuracoes` e são alterados em **Adminis
 | [IMPLANTACAO.md](docs/IMPLANTACAO.md) | Disponibilizar na rede interna com HTTPS; diferença entre as formas de rodar           |
 | [MANUTENCAO.md](docs/MANUTENCAO.md)   | Rotina de backups, atualizações, senhas, logs, monitoramento e retenção de dados       |
 | [RENDER.md](docs/RENDER.md)           | Publicar na internet (Render), para acesso de qualquer lugar                           |
+| [CONTAS.md](docs/CONTAS.md)           | 2FA e acessos nas contas do Supabase, GitHub e Render; restringir conexões ao banco    |
 
 ## Início rápido (no seu computador)
 

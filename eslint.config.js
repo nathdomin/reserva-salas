@@ -15,7 +15,13 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/api/**/*.ts', 'packages/**/*.ts', '*.js', 'apps/*/scripts/**/*.{js,mjs}'],
+    files: [
+      'apps/api/**/*.ts',
+      'packages/**/*.ts',
+      '*.js',
+      'scripts/**/*.{js,mjs}',
+      'apps/*/scripts/**/*.{js,mjs}',
+    ],
     languageOptions: { globals: globals.node },
   },
   {
@@ -25,7 +31,7 @@ export default tseslint.config(
     rules: reactHooks.configs.recommended.rules,
   },
   {
-    files: ['apps/api/scripts/**', 'apps/api/src/server.ts'],
+    files: ['scripts/**', 'apps/api/scripts/**', 'apps/api/src/server.ts'],
     rules: { 'no-console': 'off' },
   },
 );

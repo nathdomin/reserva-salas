@@ -15,6 +15,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { Panel } from '../components/ui/Panel';
 import { Spinner } from '../components/ui/Spinner';
 import { useSessao } from '../features/auth/session';
+import { AgendaDia } from '../features/calendario/AgendaDia';
 import { CalendarioMes } from '../features/calendario/CalendarioMes';
 import { GradeHorarios, type ColunaGrade } from '../features/calendario/GradeHorarios';
 import { Legenda } from '../features/calendario/Legenda';
@@ -33,12 +34,14 @@ import {
 import { cn } from '../lib/cn';
 import { errorMessage } from '../lib/forms';
 
-/** Sem visão na URL: semana no computador; dia no celular (cabe melhor na tela). */
+function ehCelular() {
+  return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 639px)').matches;
+}
+
+/** Sem visão na URL: semana no computador; agenda no celular (lista, sem rolagem lateral). */
 function lerVisao(valor: string | null): Visao {
-  if (valor === 'mes' || valor === 'dia' || valor === 'semana') return valor;
-  const celular =
-    typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 639px)').matches;
-  return celular ? 'dia' : 'semana';
+  if (VISOES.some((v) => v.valor === valor)) return valor as Visao;
+  return ehCelular() ? 'agenda' : 'semana';
 }
 
 export function CalendarPage() {
@@ -80,6 +83,12 @@ export function CalendarPage() {
   }).toString()}`;
 
   const lista = reservas.data ?? [];
+  // A Agenda busca a semana (para a faixa de dias), mas a contagem é a do dia escolhido.
+  const contagem =
+    visao === 'agenda'
+      ? lista.filter((r) => dataDoInstante(r.inicio) === data).length
+      : lista.length;
+  const periodoTexto = visao === 'agenda' ? 'neste dia' : 'neste período';
 
   return (
     <>
@@ -138,6 +147,8 @@ export function CalendarPage() {
                 className={cn(
                   'h-8 rounded px-3 text-sm font-semibold pointer-coarse:h-10',
                   visao === v.valor ? 'bg-ink text-paper' : 'text-ink hover:bg-ink/5',
+                  v.tela === 'celular' && 'sm:hidden',
+                  v.tela === 'grande' && 'hidden sm:block',
                 )}
               >
                 {v.rotulo}
@@ -164,12 +175,12 @@ export function CalendarPage() {
       </div>
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <Legenda visao={visao} />
+        {visao !== 'agenda' && <Legenda visao={visao} />}
         {reservas.isSuccess && (
           <p className="text-sm text-muted" role="status">
-            {lista.length === 0
-              ? 'Nenhuma reserva neste período: todos os horários estão livres.'
-              : `${lista.length} reserva${lista.length > 1 ? 's' : ''} neste período.`}
+            {contagem === 0
+              ? `Nenhuma reserva ${periodoTexto}: todos os horários estão livres.`
+              : `${contagem} reserva${contagem > 1 ? 's' : ''} ${periodoTexto}.`}
             {reservas.isFetching && ' Atualizando…'}
           </p>
         )}
@@ -199,7 +210,10 @@ export function CalendarPage() {
           salaId={salaId}
           usuarioId={usuario?.id}
           config={config.data}
-          linkDoDia={(dia) => link({ visao: 'dia', data: dia })}
+          // No celular o dia abre na Agenda; em telas maiores, na grade do dia.
+          linkDoDia={(dia) =>
+            link({ visao: visao === 'agenda' || ehCelular() ? 'agenda' : 'dia', data: dia })
+          }
         />
       )}
     </>
@@ -231,6 +245,22 @@ function ConteudoCalendario(props: {
           description="Ainda não há salas cadastradas. O administrador cadastra as salas em Administração › Salas."
         />
       </Panel>
+    );
+  }
+
+  if (visao === 'agenda') {
+    return (
+      <AgendaDia
+        data={data}
+        hoje={hoje}
+        agora={agora}
+        reservas={reservas}
+        salas={salas}
+        salaId={salaId}
+        usuarioId={usuarioId}
+        config={config}
+        linkDoDia={props.linkDoDia}
+      />
     );
   }
 

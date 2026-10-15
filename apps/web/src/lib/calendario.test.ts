@@ -6,6 +6,7 @@ import {
   gradeDoMes,
   inicioDaSemana,
   minutosDoInstante,
+  montarAgenda,
   navegar,
   periodoDaVisao,
   somarMeses,
@@ -100,5 +101,62 @@ describe('calendário: reuniões sobrepostas', () => {
       [660, 1, 2],
       [800, 0, 1],
     ]);
+  });
+});
+
+describe('calendário: agenda do dia', () => {
+  const opcoes = { abertura: 420, fechamento: 1200, livreDesde: 420, duracaoMinima: 15 };
+  const agenda = (itens: [number, number][], extra: Partial<typeof opcoes> = {}) =>
+    montarAgenda(
+      itens,
+      (i) => i[0],
+      (i) => i[1],
+      { ...opcoes, ...extra },
+    ).map((t) =>
+      t.tipo === 'livre' ? `livre ${t.inicio}-${t.fim}` : `ocupado ${t.inicio}-${t.fim}`,
+    );
+
+  it('dia sem reservas: tudo livre', () => {
+    expect(agenda([])).toEqual(['livre 420-1200']);
+  });
+
+  it('intercala reservas e intervalos livres, em ordem', () => {
+    expect(
+      agenda([
+        [660, 720],
+        [480, 540],
+      ]),
+    ).toEqual([
+      'livre 420-480',
+      'ocupado 480-540',
+      'livre 540-660',
+      'ocupado 660-720',
+      'livre 720-1200',
+    ]);
+  });
+
+  it('reservas encostadas ou sobrepostas não deixam livre entre elas', () => {
+    expect(
+      agenda([
+        [480, 600],
+        [540, 570],
+        [600, 660],
+      ]),
+    ).toEqual([
+      'livre 420-480',
+      'ocupado 480-600',
+      'ocupado 540-570',
+      'ocupado 600-660',
+      'livre 660-1200',
+    ]);
+  });
+
+  it('livre só a partir de agora e com a duração mínima', () => {
+    expect(agenda([[600, 660]], { livreDesde: 555, duracaoMinima: 60 })).toEqual([
+      'ocupado 600-660',
+      'livre 660-1200',
+    ]);
+    // Dia que já passou: só as reservas.
+    expect(agenda([[600, 660]], { livreDesde: 1200 })).toEqual(['ocupado 600-660']);
   });
 });

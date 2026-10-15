@@ -5,12 +5,14 @@ import { APP_LOCALE, emMinutos, partesNoFuso, somarDias } from '@reserva/shared'
  * a semana começa na segunda-feira (semana de trabalho).
  */
 
-export type Visao = 'mes' | 'semana' | 'dia';
+export type Visao = 'agenda' | 'mes' | 'semana' | 'dia';
 
-export const VISOES: { valor: Visao; rotulo: string }[] = [
-  { valor: 'mes', rotulo: 'Mês' },
-  { valor: 'semana', rotulo: 'Semana' },
-  { valor: 'dia', rotulo: 'Dia' },
+/** A Agenda é a visão do celular; Semana e Dia (grade) ficam para telas maiores. */
+export const VISOES: { valor: Visao; rotulo: string; tela: 'celular' | 'todas' | 'grande' }[] = [
+  { valor: 'agenda', rotulo: 'Agenda', tela: 'celular' },
+  { valor: 'mes', rotulo: 'Mês', tela: 'todas' },
+  { valor: 'semana', rotulo: 'Semana', tela: 'grande' },
+  { valor: 'dia', rotulo: 'Dia', tela: 'grande' },
 ];
 
 /** Meio-dia UTC: evita qualquer efeito de fuso ao formatar só a data. */
@@ -64,10 +66,10 @@ export function gradeDoMes(data: string): string[][] {
   return semanas;
 }
 
-/** Datas consultadas na API para a visão (inclusive). */
+/** Datas consultadas na API para a visão (inclusive). A Agenda busca a semana inteira. */
 export function periodoDaVisao(visao: Visao, data: string): { inicio: string; fim: string } {
   if (visao === 'dia') return { inicio: data, fim: data };
-  if (visao === 'semana') {
+  if (visao === 'semana' || visao === 'agenda') {
     const dias = diasDaSemana(data);
     return { inicio: dias[0]!, fim: dias[6]! };
   }
@@ -78,14 +80,14 @@ export function periodoDaVisao(visao: Visao, data: string): { inicio: string; fi
 /** Data da página anterior/seguinte. */
 export function navegar(visao: Visao, data: string, direcao: 1 | -1): string {
   if (visao === 'dia') return somarDias(data, direcao);
-  if (visao === 'semana') return somarDias(data, 7 * direcao);
+  if (visao === 'semana' || visao === 'agenda') return somarDias(data, 7 * direcao);
   return somarMeses(data, direcao);
 }
 
 /** Ex.: "Outubro de 2026", "12 a 18 de outubro de 2026", "Sexta-feira, 9 de outubro de 2026" */
 export function tituloDoPeriodo(visao: Visao, data: string): string {
   if (visao === 'mes') return maiuscula(fmtMesAno.format(meioDia(data)));
-  if (visao === 'dia') return maiuscula(fmtCompleto.format(meioDia(data)));
+  if (visao === 'dia' || visao === 'agenda') return maiuscula(fmtCompleto.format(meioDia(data)));
   const dias = diasDaSemana(data);
   const [inicio, fim] = [dias[0]!, dias[6]!];
   if (inicio.slice(0, 7) === fim.slice(0, 7)) {
@@ -159,4 +161,44 @@ export function distribuirEmColunas<T>(
   }
   fecharGrupo();
   return resultado;
+}
+
+export type TrechoAgenda<T> =
+  | { tipo: 'livre'; inicio: number; fim: number }
+  | { tipo: 'ocupado'; inicio: number; fim: number; item: T };
+
+/**
+ * Linha do tempo de uma sala num dia (visão Agenda): reservas em ordem e os intervalos
+ * livres entre elas, em minutos desde 00:00. Livres só a partir de `livreDesde`
+ * (o próximo horário ainda reservável) e com pelo menos `duracaoMinima`.
+ */
+export function montarAgenda<T>(
+  itens: T[],
+  inicio: (item: T) => number,
+  fim: (item: T) => number,
+  opcoes: { abertura: number; fechamento: number; livreDesde: number; duracaoMinima: number },
+): TrechoAgenda<T>[] {
+  const { abertura, fechamento, livreDesde, duracaoMinima } = opcoes;
+  const ocupados = itens
+    .map((item) => ({
+      item,
+      inicio: Math.max(inicio(item), abertura),
+      fim: Math.min(fim(item), fechamento),
+    }))
+    .sort((a, b) => a.inicio - b.inicio || a.fim - b.fim);
+
+  const trechos: TrechoAgenda<T>[] = [];
+  const livre = (de: number, ate: number) => {
+    const desde = Math.max(de, livreDesde);
+    if (ate - desde >= duracaoMinima) trechos.push({ tipo: 'livre', inicio: desde, fim: ate });
+  };
+
+  let cursor = abertura;
+  for (const o of ocupados) {
+    if (o.inicio > cursor) livre(cursor, o.inicio);
+    trechos.push({ tipo: 'ocupado', ...o });
+    cursor = Math.max(cursor, o.fim);
+  }
+  if (cursor < fechamento) livre(cursor, fechamento);
+  return trechos;
 }

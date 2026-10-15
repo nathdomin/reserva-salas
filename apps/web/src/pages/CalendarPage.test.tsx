@@ -152,4 +152,33 @@ describe('calendário', () => {
     expect(await screen.findByText('1 reserva neste período.')).toBeTruthy();
     temTitulo('Terça-feira, 1 de dezembro de 2026');
   });
+
+  it('agenda (celular): lista do dia por sala, com os horários livres para reservar', async () => {
+    mockApi(rotas());
+    renderApp('/calendario?visao=agenda');
+    expect(await screen.findByText('1 reserva neste dia.')).toBeTruthy();
+    temTitulo('Terça-feira, 1 de dezembro de 2026');
+
+    // Agora são 09:00: livre até a reunião das 10:00 e depois dela.
+    expect(screen.getByText(/Livres agora/).parentElement?.textContent).toBe(
+      'Livres agora: Sala Azul (até 10:00), Sala Verde (até 20:00)',
+    );
+    const livre = screen.getByRole('link', { name: 'Reservar Sala Azul às 09:00' });
+    expect(livre.getAttribute('href')).toBe(
+      `/reservas/nova?data=2026-12-01&inicio=09%3A00&salaId=${SALA_AZUL.id}`,
+    );
+    expect(screen.getByRole('link', { name: 'Reservar Sala Azul às 11:00' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Reservar Sala Azul às 10:00' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Reservar Sala Azul às 07:00' })).toBeNull();
+    const minha = screen.getByRole('link', { name: /Planejamento mensal/ });
+    expect(minha.getAttribute('href')).toBe(`/reservas/${MINHA.id}`);
+    expect(minha.textContent).toContain('Sua reserva');
+
+    // Outro dia da semana: troca sem nova busca (a Agenda já trouxe a semana inteira).
+    fireEvent.click(screen.getByRole('link', { name: 'Qui. 3: 1 reserva' }));
+    temTitulo('Quinta-feira, 3 de dezembro de 2026');
+    expect(screen.getByRole('link', { name: /Daily do time/ }).textContent).toContain('Ocupado');
+    expect(screen.getByRole('link', { name: 'Reservar Sala Verde às 07:00' })).toBeTruthy();
+    expect(screen.queryByText(/Livres agora/)).toBeNull();
+  });
 });

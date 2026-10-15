@@ -6,15 +6,36 @@ import {
   type Configuracoes,
   type Reserva,
 } from '@reserva/shared';
-import type { ReactNode } from 'react';
+import { useSyncExternalStore, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { cn } from '../../lib/cn';
 import { diaCurto, distribuirEmColunas, minutosDoInstante } from '../../lib/calendario';
 import { formatHora, formatHorario } from '../../lib/format';
 import { ESTILO_MINHA, ESTILO_OCUPADO, ESTILO_PASSADO } from './estilos';
 
-/** Altura de 1 hora na grade, em pixels. */
+/** Altura de 1 hora na grade, em pixels: maior em tela de toque, para o dedo acertar o horário. */
 const HORA_PX = 48;
+const HORA_PX_TOQUE = 64;
+/** Altura de uma linha de texto dentro de uma reserva (text-xs com leading-tight). */
+const LINHA_PX = 15;
+
+const TOQUE = '(pointer: coarse)';
+
+function assinarToque(aviso: () => void) {
+  if (typeof window.matchMedia !== 'function') return () => {};
+  const media = window.matchMedia(TOQUE);
+  media.addEventListener('change', aviso);
+  return () => media.removeEventListener('change', aviso);
+}
+
+/** A tela é de toque (celular, tablet)? */
+function useTelaDeToque() {
+  return useSyncExternalStore(
+    assinarToque,
+    () => typeof window.matchMedia === 'function' && window.matchMedia(TOQUE).matches,
+    () => false,
+  );
+}
 
 export interface ColunaGrade {
   chave: string;
@@ -35,6 +56,8 @@ interface GradeHorariosProps {
   mostrarSala: boolean;
   /** Sala selecionada no filtro: vai junto ao clicar num horário livre. */
   salaFiltro?: string | undefined;
+  /** Largura mínima de cada coluna, em pixels (abaixo disso a grade rola para o lado). */
+  larguraColuna?: number;
 }
 
 /**
@@ -48,12 +71,14 @@ export function GradeHorarios({
   usuarioId,
   mostrarSala,
   salaFiltro,
+  larguraColuna = 120,
 }: GradeHorariosProps) {
+  const horaPx = useTelaDeToque() ? HORA_PX_TOQUE : HORA_PX;
   const abertura = emMinutos(config.horarioInicio);
   const fechamento = emMinutos(config.horarioFim);
   const totalMin = Math.max(fechamento - abertura, 60);
-  const altura = (totalMin / 60) * HORA_PX;
-  const px = (minutos: number) => ((minutos - abertura) / 60) * HORA_PX;
+  const altura = (totalMin / 60) * horaPx;
+  const px = (minutos: number) => ((minutos - abertura) / 60) * horaPx;
   // Horários clicáveis a cada 30 min (ou na granularidade, se for maior).
   const passo = Math.max(config.granularidadeMinutos, 30);
   const horasCheias = gerarHorarios(config.horarioInicio, config.horarioFim, 60).filter(
@@ -63,16 +88,17 @@ export function GradeHorarios({
   for (let t = abertura; t + config.granularidadeMinutos <= fechamento; t += passo) inicios.push(t);
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-line bg-paper">
-      <div style={{ minWidth: 56 + colunas.length * 120 }}>
+    // Rolagem própria (limitada à altura da tela) para o cabeçalho ficar fixo no topo da grade.
+    <div className="max-h-[calc(100dvh-7rem)] overflow-auto overscroll-contain rounded-lg border border-line bg-paper">
+      <div style={{ minWidth: 56 + colunas.length * larguraColuna }}>
         {/* Cabeçalho */}
-        <div className="flex border-b border-line">
+        <div className="sticky top-0 z-40 flex border-b border-line bg-paper">
           <div className="sticky left-0 z-30 w-14 shrink-0 bg-paper" />
           {colunas.map((c) => (
             <div
               key={c.chave}
               className={cn(
-                'min-w-0 flex-1 border-l border-line px-2 py-2 text-center text-sm',
+                'min-w-0 flex-1 border-l border-line px-1 py-2 text-center text-sm',
                 c.destaque && 'bg-brand-soft',
               )}
             >
@@ -169,7 +195,7 @@ export function GradeHorarios({
                         className="group absolute inset-x-0 block hover:bg-canvas focus-visible:z-20"
                         style={{
                           top: px(t),
-                          height: (Math.min(passo, fechamento - t) / 60) * HORA_PX,
+                          height: (Math.min(passo, fechamento - t) / 60) * horaPx,
                         }}
                       >
                         <span className="hidden px-1.5 pt-0.5 text-xs font-medium text-muted group-hover:block group-focus-visible:block">
@@ -195,6 +221,13 @@ export function GradeHorarios({
                     .filter(Boolean)
                     .join(', ');
                   const alturaBloco = Math.max(px(fim) - px(ini), 20);
+                  // Só as linhas que cabem inteiras; sem espaço para duas, tudo vai numa só.
+                  const cabem = Math.floor((alturaBloco - 6) / LINHA_PX);
+                  const linhas = [
+                    mostrarSala ? r.sala.nome : null,
+                    r.motivo,
+                    r.responsavel.nome,
+                  ].filter((l): l is string => Boolean(l));
                   return (
                     <Link
                       key={r.id}
@@ -202,7 +235,8 @@ export function GradeHorarios({
                       aria-label={descricao}
                       title={descricao}
                       className={cn(
-                        'absolute z-10 overflow-hidden rounded-sm px-1.5 py-0.5 text-xs leading-tight',
+                        'absolute z-10 overflow-hidden rounded-sm px-1 text-xs leading-tight',
+                        cabem >= 2 ? 'py-0.5' : 'flex items-center',
                         'hover:shadow-[0_1px_4px_rgba(0,0,0,0.18)]',
                         minha ? ESTILO_MINHA : ESTILO_OCUPADO,
                       )}
@@ -213,13 +247,28 @@ export function GradeHorarios({
                         width: `calc(${100 / cols}% - 4px)`,
                       }}
                     >
-                      <span className="block truncate font-semibold">
-                        {formatHora(r.inicio)}–{formatHora(r.fim)}
-                      </span>
-                      {mostrarSala && <span className="block truncate">{r.sala.nome}</span>}
-                      <span className="block truncate">{r.motivo}</span>
-                      {alturaBloco >= 56 && (
-                        <span className="block truncate text-muted">{r.responsavel.nome}</span>
+                      {cabem >= 2 ? (
+                        <>
+                          <span className="block truncate font-semibold">
+                            {formatHora(r.inicio)}–{formatHora(r.fim)}
+                          </span>
+                          {linhas.slice(0, cabem - 1).map((linha, i) => (
+                            <span
+                              key={i}
+                              className={cn(
+                                'block truncate',
+                                i === linhas.length - 1 && 'text-muted',
+                              )}
+                            >
+                              {linha}
+                            </span>
+                          ))}
+                        </>
+                      ) : (
+                        <span className="block truncate">
+                          <span className="font-semibold">{formatHora(r.inicio)}</span>{' '}
+                          {linhas.slice(0, -1).join(' · ')}
+                        </span>
                       )}
                     </Link>
                   );

@@ -70,7 +70,7 @@ describe('calendário', () => {
     expect(outra.getAttribute('href')).toBe(`/reservas/${DE_OUTRA.id}`);
 
     const legenda = screen.getByRole('list', { name: 'Legenda' });
-    for (const item of ['Livre (clique para reservar)', 'Ocupado', 'Sua reserva']) {
+    for (const item of ['Livre (toque ou clique para reservar)', 'Ocupado', 'Sua reserva']) {
       expect(legenda.textContent).toContain(item);
     }
   });
@@ -140,6 +140,10 @@ describe('calendário', () => {
     renderApp('/calendario?visao=mes&data=2026-12-15');
     expect(await screen.findByText('2 reservas neste período.')).toBeTruthy();
     temTitulo('Dezembro de 2026');
+    // No mês não há horários livres nem sombreado: a legenda mostra só os tipos de reserva.
+    const legenda = screen.getByRole('list', { name: 'Legenda' }).textContent;
+    expect(legenda).toContain('Sua reserva');
+    expect(legenda).not.toContain('Livre');
 
     expect(
       screen.getByRole('link', { name: 'quarta-feira, 2 de dezembro: sem reservas' }),

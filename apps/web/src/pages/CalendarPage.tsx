@@ -85,7 +85,7 @@ export function CalendarPage() {
     <>
       <PageHeader
         title="Calendário"
-        description="Horários livres e ocupados de cada sala. Clique em um horário livre para reservar."
+        description="Horários livres e ocupados de cada sala. Toque ou clique em um horário livre para reservar."
         actions={
           <ButtonLink to={novaReservaHref}>
             <Plus aria-hidden className="size-4" strokeWidth={2.5} />
@@ -164,7 +164,7 @@ export function CalendarPage() {
       </div>
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <Legenda />
+        <Legenda visao={visao} />
         {reservas.isSuccess && (
           <p className="text-sm text-muted" role="status">
             {lista.length === 0
@@ -306,6 +306,8 @@ function ConteudoCalendario(props: {
       usuarioId={usuarioId}
       mostrarSala={visao === 'semana' && todasAsSalas}
       salaFiltro={salaId || undefined}
+      // Semana com colunas mais estreitas: os 7 dias cabem a partir do tablet.
+      larguraColuna={visao === 'semana' ? 88 : 120}
     />
   );
 }

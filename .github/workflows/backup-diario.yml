@@ -65,9 +65,12 @@ jobs:
           esac
           exit $falta
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          # O workflow só lê o código: não deixa a credencial do GitHub salva no disco.
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -100,7 +103,7 @@ jobs:
           echo "arquivo=$pasta/$nome.sql.age" >> "$GITHUB_OUTPUT"
 
       - name: Guardar o backup criptografado (90 dias)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.backup.outputs.nome }}
           path: ${{ steps.backup.outputs.arquivo }}

@@ -1,6 +1,13 @@
-import { screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import { COLABORADOR, logadoComo, mockApi, reservaMock } from '../test/mock-api';
+import { screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  COLABORADOR,
+  logadoComo,
+  mockApi,
+  reservaMock,
+  SALA_AZUL,
+  SALA_VERDE,
+} from '../test/mock-api';
 import { renderApp } from '../test/render';
 
 const base = logadoComo(COLABORADOR);
@@ -9,7 +16,7 @@ describe('Início', () => {
   it('cumprimenta pelo primeiro nome', async () => {
     mockApi(logadoComo(COLABORADOR));
     renderApp('/');
-    expect(await screen.findByText(/Olá, Caio\./)).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Olá, Caio' })).toBeTruthy();
   });
 
   it('mostra servidor e banco conectados quando a API responde 200', async () => {
@@ -69,5 +76,54 @@ describe('Início', () => {
     expect(link.textContent).toContain('Planejamento mensal');
     expect(link.textContent).toContain('10:00 às 11:00');
     expect(link.textContent).toContain('Sala Azul');
+  });
+
+  describe('painel de hoje', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('destaca a próxima reunião, as salas livres agora e os números do dia', async () => {
+      // Terça, 01/12/2026, 09:00 em Brasília; a reunião (Sala Azul) é das 10:00 às 11:00.
+      vi.useFakeTimers({ toFake: ['Date'], shouldAdvanceTime: true });
+      vi.setSystemTime(new Date('2026-12-01T12:00:00.000Z'));
+      const reserva = reservaMock({
+        inicio: '2026-12-01T13:00:00.000Z',
+        fim: '2026-12-01T14:00:00.000Z',
+      });
+      mockApi({
+        ...logadoComo(COLABORADOR),
+        'GET /api/reservas/minhas?tipo=proximas&limite=6': { body: { reservas: [reserva] } },
+        'GET /api/salas': { body: { salas: [SALA_AZUL, SALA_VERDE] } },
+        'GET /api/reservas?dataInicio=2026-12-01&dataFim=2026-12-01': {
+          body: { reservas: [reserva] },
+        },
+      });
+      renderApp('/');
+
+      const destaque = (await screen.findByRole('heading', { name: 'Sua próxima reunião' }))
+        .parentElement!;
+      expect(destaque.textContent).toContain('10:00');
+      expect(destaque.textContent).toContain('Planejamento mensal');
+      expect(destaque.textContent).toContain('começa em 1 h');
+      expect(
+        within(destaque).getByRole('link', { name: 'Ver detalhes' }).getAttribute('href'),
+      ).toBe(`/reservas/${reserva.id}`);
+
+      const livres = screen.getByRole('heading', { name: 'Livres agora' }).closest('section')!;
+      expect(await within(livres).findByText('livre até 10:00')).toBeTruthy();
+      expect(within(livres).getByText('livre até 20:00')).toBeTruthy();
+      expect(
+        within(livres)
+          .getByRole('link', { name: 'Reservar Sala Verde às 09:00' })
+          .getAttribute('href'),
+      ).toBe(`/reservas/nova?data=2026-12-01&inicio=09%3A00&salaId=${SALA_VERDE.id}`);
+
+      const numero = (rotulo: string) => screen.getByText(rotulo).nextElementSibling?.textContent;
+      expect(numero('reuniões suas hoje')).toBe('1');
+      expect(numero('salas livres agora')).toBe('2');
+      expect(numero('reservas hoje no total')).toBe('1');
+      expect(numero('salas disponíveis')).toBe('2');
+    });
   });
 });

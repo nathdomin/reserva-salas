@@ -76,7 +76,7 @@ describe('login e proteção de rotas', () => {
   it('quem já está logado e abre /login vai direto para o início', async () => {
     mockApi(logadoComo(ADMIN));
     const { location } = renderApp('/login');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Início' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Olá, Ana' })).toBeTruthy();
     expect(location.pathname).toBe('/');
   });
 

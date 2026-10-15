@@ -7,11 +7,11 @@ import {
   dataDoInstante,
   diasDaSemana,
   minutosDoInstante,
-  montarAgenda,
   nomeCurtoDoDia,
   type TrechoAgenda,
 } from '../../lib/calendario';
 import { ESTILO_MINHA, ESTILO_OCUPADO } from './estilos';
+import { livreAte, livreDesdeNoDia, trechosDaSala } from './livres';
 
 interface AgendaDiaProps {
   data: string;
@@ -50,18 +50,10 @@ export function AgendaDia({
 }: AgendaDiaProps) {
   const ativas = reservas.filter((r) => r.status !== 'CANCELADA');
   const doDia = ativas.filter((r) => dataDoInstante(r.inicio) === data);
-  const abertura = emMinutos(config.horarioInicio);
   const fechamento = emMinutos(config.horarioFim);
 
   // Hoje: livre só a partir do próximo horário reservável. Dia passado: nada livre.
-  const passo = config.granularidadeMinutos;
-  const agoraMin = minutosDoInstante(agora.toISOString());
-  const livreDesde =
-    data < hoje
-      ? fechamento
-      : data === hoje
-        ? Math.max(abertura, Math.ceil(agoraMin / passo) * passo)
-        : abertura;
+  const livreDesde = livreDesdeNoDia(data, hoje, agora, config);
 
   // Salas ativas e, se houver, sala desativada que ainda tem reserva no dia.
   const mapa = new Map<string, { id: string; nome: string; detalhe: string }>();
@@ -81,11 +73,10 @@ export function AgendaDia({
     .filter((s) => !salaId || s.id === salaId)
     .map((s) => ({
       ...s,
-      trechos: montarAgenda(
+      trechos: trechosDaSala(
         doDia.filter((r) => r.sala.id === s.id),
-        (r) => (r.diaInteiro ? abertura : minutosDoInstante(r.inicio)),
-        (r) => (r.diaInteiro ? fechamento : minutosDoInstante(r.fim)),
-        { abertura, fechamento, livreDesde, duracaoMinima: config.duracaoMinimaMinutos },
+        config,
+        livreDesde,
       ),
     }));
 
@@ -93,8 +84,8 @@ export function AgendaDia({
   const dentroDoExpediente = data === hoje && livreDesde < fechamento;
   const livresAgora = dentroDoExpediente
     ? lista.flatMap((s) => {
-        const t = s.trechos.find((x) => x.tipo === 'livre' && x.inicio === livreDesde);
-        return t ? [{ nome: s.nome, ate: paraHora(t.fim) }] : [];
+        const ate = livreAte(s.trechos, livreDesde);
+        return ate === null ? [] : [{ nome: s.nome, ate: paraHora(ate) }];
       })
     : [];
 

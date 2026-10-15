@@ -1,4 +1,11 @@
-import type { Configuracoes, Reserva, Sala, UsuarioAdmin, UsuarioSessao } from '@reserva/shared';
+import {
+  hojeNoFuso,
+  type Configuracoes,
+  type Reserva,
+  type Sala,
+  type UsuarioAdmin,
+  type UsuarioSessao,
+} from '@reserva/shared';
 import { vi } from 'vitest';
 
 export interface MockResposta {
@@ -83,11 +90,15 @@ export const SEM_SESSAO = {
 
 /** Rotas básicas de uma pessoa logada (sessão, situação do sistema e tela inicial). */
 export function logadoComo(usuario: UsuarioSessao): Record<string, Rota> {
+  const hoje = hojeNoFuso();
   return {
     'GET /api/auth/me': { body: { usuario } },
     'GET /api/health': HEALTH_OK,
     'GET /api/reservas/minhas?tipo=proximas&limite=6': { body: { reservas: [] } },
     'GET /api/configuracoes': { body: { configuracoes: CONFIG } },
+    // Tela inicial: salas e reservas de hoje ("Livres agora" e números do dia).
+    'GET /api/salas': { body: { salas: [] } },
+    [`GET /api/reservas?dataInicio=${hoje}&dataFim=${hoje}`]: { body: { reservas: [] } },
   };
 }
 

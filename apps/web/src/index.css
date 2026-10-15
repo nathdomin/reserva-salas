@@ -34,6 +34,7 @@
   --animate-tracar: tracar 450ms 150ms var(--ease-suave) both;
   --animate-pulsar: pulsar 1.8s var(--ease-suave) infinite;
   --animate-brilho: brilho 1.2s ease-in-out infinite;
+  --animate-flutuar: flutuar 7s ease-in-out infinite;
 
   @keyframes entrar {
     from {
@@ -63,6 +64,11 @@
     to {
       transform: scale(2.8);
       opacity: 0;
+    }
+  }
+  @keyframes flutuar {
+    50% {
+      transform: translateY(-10px);
     }
   }
   @keyframes brilho {

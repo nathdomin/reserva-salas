@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ADMIN,
@@ -54,20 +54,22 @@ describe('calendário', () => {
     vi.useRealTimers();
   });
 
-  it('abre na semana atual, com as reservas e a legenda', async () => {
+  it('abre na semana atual da primeira sala, com as reservas e a legenda', async () => {
     mockApi(rotas());
     renderApp('/calendario');
-    expect(await screen.findByText('2 reservas neste período.')).toBeTruthy();
+    expect(await screen.findByText('1 reserva neste período.')).toBeTruthy();
     temTitulo('30 de novembro a 6 de dezembro de 2026');
 
+    // Uma sala por vez: a primeira já vem escolhida e a reserva da outra sala não aparece.
+    const abas = screen.getByRole('group', { name: 'Sala' });
+    expect(
+      within(abas).getByRole('button', { name: 'Sala Azul' }).getAttribute('aria-pressed'),
+    ).toBe('true');
     const minha = screen.getByRole('link', {
-      name: '10:00 às 11:00, Sala Azul, Planejamento mensal, Caio Colaborador, sua reserva',
+      name: '10:00 às 11:00, Planejamento mensal, Caio Colaborador, sua reserva',
     });
     expect(minha.getAttribute('href')).toBe(`/reservas/${MINHA.id}`);
-    const outra = screen.getByRole('link', {
-      name: '14:00 às 14:30, Sala Verde, Daily do time, Ana Admin',
-    });
-    expect(outra.getAttribute('href')).toBe(`/reservas/${DE_OUTRA.id}`);
+    expect(screen.queryByRole('link', { name: /Daily do time/ })).toBeNull();
 
     const legenda = screen.getByRole('list', { name: 'Legenda' });
     for (const item of ['Livre (toque ou clique para reservar)', 'Ocupado', 'Sua reserva']) {
@@ -78,10 +80,12 @@ describe('calendário', () => {
   it('horário livre leva ao formulário já preenchido; horário passado não', async () => {
     mockApi(rotas());
     renderApp('/calendario');
-    await screen.findByText('2 reservas neste período.');
+    await screen.findByText('1 reserva neste período.');
 
     const livre = screen.getByRole('link', { name: 'Reservar Ter., 01/12 às 14:00' });
-    expect(livre.getAttribute('href')).toBe('/reservas/nova?data=2026-12-01&inicio=14%3A00');
+    expect(livre.getAttribute('href')).toBe(
+      `/reservas/nova?data=2026-12-01&inicio=14%3A00&salaId=${SALA_AZUL.id}`,
+    );
     // 08:00 de hoje e toda a segunda (30/11) já passaram.
     expect(screen.queryByRole('link', { name: 'Reservar Ter., 01/12 às 08:00' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Reservar Seg., 30/11 às 14:00' })).toBeNull();
@@ -90,7 +94,7 @@ describe('calendário', () => {
   it('navega entre as semanas e volta para hoje', async () => {
     mockApi(rotas());
     renderApp('/calendario');
-    await screen.findByText('2 reservas neste período.');
+    await screen.findByText('1 reserva neste período.');
 
     fireEvent.click(screen.getByRole('button', { name: 'Próximo período' }));
     expect(
@@ -99,7 +103,7 @@ describe('calendário', () => {
     temTitulo('7 a 13 de dezembro de 2026');
 
     fireEvent.click(screen.getByRole('button', { name: 'Hoje' }));
-    expect(await screen.findByText('2 reservas neste período.')).toBeTruthy();
+    expect(await screen.findByText('1 reserva neste período.')).toBeTruthy();
     temTitulo('30 de novembro a 6 de dezembro de 2026');
   });
 
@@ -121,15 +125,20 @@ describe('calendário', () => {
     ).toBeTruthy();
   });
 
-  it('filtra por sala', async () => {
+  it('semana: troca de sala pelas abas', async () => {
     const fetchMock = mockApi(
       rotas({ [`${SEMANA}&salaId=${SALA_VERDE.id}`]: { body: { reservas: [DE_OUTRA] } } }),
     );
     renderApp('/calendario');
-    await screen.findByText('2 reservas neste período.');
+    await screen.findByText('1 reserva neste período.');
 
-    fireEvent.change(screen.getByLabelText('Sala'), { target: { value: SALA_VERDE.id } });
-    expect(await screen.findByText('1 reserva neste período.')).toBeTruthy();
+    const abas = screen.getByRole('group', { name: 'Sala' });
+    fireEvent.click(within(abas).getByRole('button', { name: 'Sala Verde' }));
+    expect(await screen.findByRole('link', { name: /Daily do time/ })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /Planejamento mensal/ })).toBeNull();
+    expect(
+      within(abas).getByRole('button', { name: 'Sala Verde' }).getAttribute('aria-pressed'),
+    ).toBe('true');
     expect(
       fetchMock.mock.calls.some(([url]) => String(url).endsWith(`salaId=${SALA_VERDE.id}`)),
     ).toBe(true);

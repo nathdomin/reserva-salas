@@ -76,13 +76,15 @@ export function CalendarPage() {
   const link = (mudancas: Mudancas) => `/calendario?${montar(mudancas).toString()}`;
   const ir = (mudancas: Mudancas) => setParams(montar(mudancas));
 
-  const salaSelecionada = salas.data?.find((s) => s.id === salaId);
+  // A semana mostra uma sala por vez: sem sala escolhida, abre na primeira.
+  const salaEfetiva = visao === 'semana' && !salaId ? (salas.data?.[0]?.id ?? '') : salaId;
+  const salaSelecionada = salas.data?.find((s) => s.id === salaEfetiva);
   const novaReservaHref = `/reservas/nova?${new URLSearchParams({
     data: data < hoje ? hoje : data,
-    ...(salaId ? { salaId } : {}),
+    ...(salaEfetiva ? { salaId: salaEfetiva } : {}),
   }).toString()}`;
 
-  const lista = reservas.data ?? [];
+  const lista = (reservas.data ?? []).filter((r) => !salaEfetiva || r.sala.id === salaEfetiva);
   // A Agenda busca a semana (para a faixa de dias), mas a contagem é a do dia escolhido.
   const contagem =
     visao === 'agenda'
@@ -95,6 +97,7 @@ export function CalendarPage() {
       <PageHeader
         title="Calendário"
         description="Horários livres e ocupados de cada sala. Toque ou clique em um horário livre para reservar."
+        actionsOnlyOnDesktop
         actions={
           <ButtonLink to={novaReservaHref}>
             <Plus aria-hidden className="size-4" strokeWidth={2.5} />
@@ -127,12 +130,16 @@ export function CalendarPage() {
               <ChevronRight aria-hidden className="size-5" />
             </Button>
           </div>
-          <h2 className="text-lg font-semibold" aria-live="polite">
+          {/* No celular o título vem primeiro, numa linha só dele. */}
+          <h2
+            className="order-first w-full text-lg font-semibold sm:order-none sm:w-auto"
+            aria-live="polite"
+          >
             {tituloDoPeriodo(visao, data)}
           </h2>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
           <div
             role="group"
             aria-label="Visualização"
@@ -155,24 +162,54 @@ export function CalendarPage() {
               </button>
             ))}
           </div>
-          <label className="sr-only" htmlFor="filtro-sala">
-            Sala
-          </label>
-          <Select
-            id="filtro-sala"
-            value={salaId}
-            onChange={(e) => ir({ sala: e.target.value })}
-            className="h-9 w-auto min-w-48 pointer-coarse:h-10"
-          >
-            <option value="">Todas as salas</option>
-            {(salas.data ?? []).map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nome}
-              </option>
-            ))}
-          </Select>
+          {/* Na semana as salas viram abas (abaixo); nas outras visões, uma lista. */}
+          {visao !== 'semana' && (
+            <>
+              <label className="sr-only" htmlFor="filtro-sala">
+                Sala
+              </label>
+              <Select
+                id="filtro-sala"
+                value={salaId}
+                onChange={(e) => ir({ sala: e.target.value })}
+                className="h-9 min-w-0 flex-1 pointer-coarse:h-10 sm:w-auto sm:min-w-48 sm:flex-none"
+              >
+                <option value="">Todas as salas</option>
+                {(salas.data ?? []).map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nome}
+                  </option>
+                ))}
+              </Select>
+            </>
+          )}
         </div>
       </div>
+
+      {visao === 'semana' && salas.data && salas.data.length > 0 && (
+        <div
+          role="group"
+          aria-label="Sala"
+          className="-mx-1 mb-4 flex gap-1 overflow-x-auto px-1 py-0.5"
+        >
+          {salas.data.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              aria-pressed={s.id === salaEfetiva}
+              onClick={() => ir({ sala: s.id })}
+              className={cn(
+                'h-9 shrink-0 rounded-md border px-3 text-sm font-semibold pointer-coarse:h-10',
+                s.id === salaEfetiva
+                  ? 'border-ink bg-ink text-paper'
+                  : 'border-ink/15 bg-paper hover:border-ink/40',
+              )}
+            >
+              {s.nome}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {visao !== 'agenda' && <Legenda visao={visao} />}
@@ -207,7 +244,7 @@ export function CalendarPage() {
           reservas={lista}
           salas={salas.data}
           salaSelecionada={salaSelecionada}
-          salaId={salaId}
+          salaId={salaEfetiva}
           usuarioId={usuario?.id}
           config={config.data}
           // No celular o dia abre na Agenda; em telas maiores, na grade do dia.

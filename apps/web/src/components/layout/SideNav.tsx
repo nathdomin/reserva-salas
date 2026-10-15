@@ -21,7 +21,9 @@ export function SideNav({ perfil, onNavigate }: { perfil: Perfil; onNavigate?: (
       {secoes.map((section, index) => (
         <div key={section.label ?? index}>
           {section.label && (
-            <p className="mb-2 px-3 text-xs font-medium text-muted">{section.label}</p>
+            <p className="mb-2 px-3 text-[11px] font-semibold tracking-wider text-muted uppercase">
+              {section.label}
+            </p>
           )}
           <ul className="flex flex-col gap-0.5">
             {section.items.map(({ to, label, icon: Icon, end }) => (

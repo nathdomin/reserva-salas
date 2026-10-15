@@ -45,7 +45,7 @@ export function LoginPage() {
           <BrandMark />
         </div>
 
-        <div className="rounded-lg border border-line bg-paper p-6 sm:p-8">
+        <div className="rounded-xl border border-line bg-paper shadow-card p-6 sm:p-8">
           <h1 className="text-2xl font-semibold tracking-tight">Entrar</h1>
           <p className="mt-1 text-md text-muted">Use seu e-mail corporativo e sua senha.</p>
 

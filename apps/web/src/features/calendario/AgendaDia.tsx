@@ -152,6 +152,12 @@ export function AgendaDia({
 
       {livresAgora.length > 0 && (
         <p className="rounded-md border-l-4 border-ok bg-paper px-3 py-2 text-sm">
+          <span
+            aria-hidden
+            className="relative mr-2 inline-block size-2 rounded-full bg-ok align-middle"
+          >
+            <span className="absolute inset-0 animate-pulsar rounded-full bg-ok" />
+          </span>
           <span className="font-semibold">Livres agora: </span>
           {livresAgora.map((s) => `${s.nome} (até ${s.ate})`).join(', ')}
         </p>
@@ -163,7 +169,7 @@ export function AgendaDia({
           <section
             key={sala.id}
             aria-labelledby={`agenda-${sala.id}`}
-            className="overflow-hidden rounded-lg border border-line bg-paper"
+            className="overflow-hidden rounded-xl border border-line bg-paper shadow-card"
           >
             <header className="border-b border-line px-4 py-3">
               <h3 id={`agenda-${sala.id}`} className="font-semibold">

@@ -13,7 +13,6 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { Select } from '../components/ui/Field';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Panel } from '../components/ui/Panel';
-import { Spinner } from '../components/ui/Spinner';
 import { useSessao } from '../features/auth/session';
 import { AgendaDia } from '../features/calendario/AgendaDia';
 import { CalendarioMes } from '../features/calendario/CalendarioMes';
@@ -33,6 +32,7 @@ import {
 } from '../lib/calendario';
 import { cn } from '../lib/cn';
 import { errorMessage } from '../lib/forms';
+import { SkeletonLista } from '../components/ui/Skeleton';
 
 function ehCelular() {
   return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 639px)').matches;
@@ -233,7 +233,7 @@ export function CalendarPage() {
 
       {(config.isPending || salas.isPending || reservas.isPending) &&
         !(config.isError || reservas.isError || salas.isError) && (
-          <Spinner label="Carregando o calendário" />
+          <SkeletonLista label="Carregando o calendário" linhas={5} />
         )}
 
       {config.data && salas.data && reservas.data && (

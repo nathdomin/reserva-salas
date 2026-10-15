@@ -1,6 +1,5 @@
 import { dataValida, hojeNoFuso, somarDias } from '@reserva/shared';
 import { SearchX } from 'lucide-react';
-import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
@@ -8,13 +7,14 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Checkbox, Field, Input, Select } from '../../components/ui/Field';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Panel } from '../../components/ui/Panel';
-import { Spinner } from '../../components/ui/Spinner';
 import { useSessao } from '../../features/auth/session';
 import { useReservasPeriodo } from '../../features/reservas/api';
 import { ListaReservas } from '../../features/reservas/ListaReservas';
 import { useSalas } from '../../features/salas/api';
 import { useUsuarios } from '../../features/users/api';
 import { errorMessage } from '../../lib/forms';
+import { avisar } from '../../features/avisos/store';
+import { SkeletonLista } from '../../components/ui/Skeleton';
 
 const MAX_DIAS = 62;
 
@@ -27,7 +27,6 @@ export function AdminReservationsPage() {
   const salaId = params.get('sala') ?? '';
   const usuarioId = params.get('pessoa') ?? '';
   const incluirCanceladas = params.get('canceladas') === '1';
-  const [aviso, setAviso] = useState<string | null>(null);
 
   const { data: usuario } = useSessao();
   const salas = useSalas(true);
@@ -55,7 +54,6 @@ export function AdminReservationsPage() {
   );
 
   function alterar(mudancas: Record<string, string>) {
-    setAviso(null);
     const novo = new URLSearchParams(params);
     for (const [chave, valor] of Object.entries(mudancas)) {
       if (valor) novo.set(chave, valor);
@@ -147,11 +145,10 @@ export function AdminReservationsPage() {
         </form>
       </Panel>
 
-      {aviso && <Alert tone="success" title={aviso} className="mb-4" />}
       {(salas.isError || usuarios.isError) && (
         <Alert tone="error" title={errorMessage(salas.error ?? usuarios.error)} className="mb-4" />
       )}
-      {!erroPeriodo && reservas.isPending && <Spinner label="Carregando reservas" />}
+      {!erroPeriodo && reservas.isPending && <SkeletonLista label="Carregando reservas" />}
       {!erroPeriodo && reservas.isError && (
         <Alert tone="error" title={errorMessage(reservas.error)} />
       )}
@@ -176,7 +173,7 @@ export function AdminReservationsPage() {
               mostrarResponsavel
               usuarioId={usuario?.id}
               onCancelada={(r) =>
-                setAviso(`Reserva de ${r.responsavel.nome} cancelada. O horário ficou livre.`)
+                avisar(`Reserva de ${r.responsavel.nome} cancelada. O horário ficou livre.`)
               }
             />
           )}

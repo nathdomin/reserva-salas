@@ -15,11 +15,11 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Field, Input, Select } from '../../components/ui/Field';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Panel } from '../../components/ui/Panel';
-import { Spinner } from '../../components/ui/Spinner';
 import { useAuditoria } from '../../features/auditoria/api';
 import { HistoricoLista } from '../../features/auditoria/HistoricoLista';
 import { useUsuarios } from '../../features/users/api';
 import { errorMessage } from '../../lib/forms';
+import { SkeletonLista } from '../../components/ui/Skeleton';
 
 /** Ações de cada tipo, para o filtro de ação acompanhar o tipo escolhido. */
 const PREFIXO: Record<EntidadeAuditoria, (acao: AcaoAuditoria) => boolean> = {
@@ -143,7 +143,7 @@ export function AuditPage() {
         )}
       </Panel>
 
-      {historico.isPending && <Spinner label="Carregando histórico" />}
+      {historico.isPending && <SkeletonLista label="Carregando histórico" />}
       {historico.isError && <Alert tone="error" title={errorMessage(historico.error)} />}
 
       {historico.isSuccess && registros.length === 0 && (

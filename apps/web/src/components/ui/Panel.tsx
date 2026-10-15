@@ -11,7 +11,9 @@ interface PanelProps {
 /** Área de conteúdo com fundo branco sobre o cinza da aplicação. */
 export function Panel({ title, actions, children, className }: PanelProps) {
   return (
-    <section className={cn('min-w-0 rounded-lg border border-line bg-paper', className)}>
+    <section
+      className={cn('min-w-0 rounded-xl border border-line bg-paper shadow-card', className)}
+    >
       {title && (
         <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-3">
           <h2 className="text-base font-semibold">{title}</h2>

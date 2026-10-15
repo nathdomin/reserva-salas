@@ -34,7 +34,7 @@ export function ListaReservas({
     : 'xl:grid-cols-[8.5rem_9rem_minmax(0,1fr)_5.5rem_10rem]';
 
   return (
-    <div className="rounded-lg border border-line bg-paper">
+    <div className="rounded-xl border border-line bg-paper shadow-card">
       <div
         aria-hidden
         className={cn(

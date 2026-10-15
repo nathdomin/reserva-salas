@@ -15,6 +15,7 @@ import { Spinner } from '../../components/ui/Spinner';
 import { useAtualizarConfiguracoes } from '../../features/configuracoes/api';
 import { useConfiguracoes } from '../../features/reservas/api';
 import { apiFieldErrors, errorMessage, zodFieldErrors, type FieldErrors } from '../../lib/forms';
+import { avisar } from '../../features/avisos/store';
 
 export function SettingsPage() {
   const config = useConfiguracoes();
@@ -58,10 +59,8 @@ function FormConfiguracoes({ atual }: { atual: Configuracoes }) {
   const salvar = useAtualizarConfiguracoes();
   const [v, setV] = useState<Valores>(() => paraValores(atual));
   const [erros, setErros] = useState<FieldErrors>({});
-  const [aviso, setAviso] = useState<string | null>(null);
 
   function alterar(campos: Partial<Valores>) {
-    setAviso(null);
     setV((anterior) => ({ ...anterior, ...campos }));
   }
 
@@ -86,7 +85,7 @@ function FormConfiguracoes({ atual }: { atual: Configuracoes }) {
     }
     if (Object.keys(mudancas).length === 0) {
       setErros({});
-      setAviso('Nada foi alterado.');
+      avisar('Nada foi alterado.');
       return;
     }
     const resultado = atualizarConfiguracoesSchema.safeParse(mudancas);
@@ -105,7 +104,7 @@ function FormConfiguracoes({ atual }: { atual: Configuracoes }) {
     salvar.mutate(resultado.data, {
       onSuccess: (salva) => {
         setV(paraValores(salva));
-        setAviso('Configurações salvas. As novas regras já valem para todos.');
+        avisar('Configurações salvas. As novas regras já valem para todos.');
       },
       onError: (error) => setErros(apiFieldErrors(error)),
     });
@@ -114,7 +113,6 @@ function FormConfiguracoes({ atual }: { atual: Configuracoes }) {
   const e = erros;
   return (
     <form onSubmit={enviar} noValidate className="flex max-w-3xl flex-col gap-6">
-      {aviso && <Alert tone="success" title={aviso} />}
       {salvar.isError && Object.keys(apiFieldErrors(salvar.error)).length === 0 && (
         <Alert tone="error" title={errorMessage(salvar.error)} />
       )}
@@ -242,7 +240,6 @@ function FormConfiguracoes({ atual }: { atual: Configuracoes }) {
           onClick={() => {
             setV(paraValores(atual));
             setErros({});
-            setAviso(null);
             salvar.reset();
           }}
         >

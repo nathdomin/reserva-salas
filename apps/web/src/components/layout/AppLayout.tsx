@@ -2,6 +2,8 @@ import { Menu, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { useSessao } from '../../features/auth/session';
+import { Avisos } from '../../features/avisos/Avisos';
+import { cn } from '../../lib/cn';
 import { ButtonLink } from '../ui/Button';
 import { BrandMark } from './BrandMark';
 import { SideNav } from './SideNav';
@@ -63,7 +65,7 @@ export function AppLayout() {
       {/* Barra superior (celular e tablet) */}
       <header
         inert={menuOpen}
-        className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-line bg-paper px-4 lg:hidden"
+        className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-line bg-paper/90 px-4 backdrop-blur-md lg:hidden"
       >
         <Link to="/" aria-label="Início">
           <BrandMark />
@@ -98,48 +100,67 @@ export function AppLayout() {
         </div>
       </aside>
 
-      {/* Menu em gaveta (celular) */}
-      {menuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            aria-label="Fechar menu"
-            tabIndex={-1}
-            className="absolute inset-0 bg-ink/40"
-            onClick={fecharMenu}
-          />
-          <div
-            id="menu-movel"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menu"
-            className="absolute inset-y-0 right-0 flex w-[min(320px,85vw)] flex-col gap-6 overflow-y-auto bg-paper px-4 py-4"
-          >
-            <div className="flex items-center justify-between">
-              <BrandMark />
-              <button
-                ref={fecharMenuRef}
-                type="button"
-                onClick={fecharMenu}
-                aria-label="Fechar menu"
-                className="grid size-10 place-items-center rounded-md hover:bg-canvas"
-              >
-                <X aria-hidden className="size-5" />
-              </button>
-            </div>
-            <SideNav perfil={usuario.perfil} onNavigate={() => setMenuOpen(false)} />
-            <div className="mt-auto">
-              <UserMenu usuario={usuario} onNavigate={() => setMenuOpen(false)} />
-            </div>
+      {/*
+        Menu em gaveta (celular): fica sempre montado para poder deslizar ao abrir e ao
+        fechar; fechado, é invisível e inerte (fora do Tab e do leitor de tela).
+      */}
+      <div
+        inert={!menuOpen}
+        aria-hidden={!menuOpen}
+        className={cn(
+          'fixed inset-0 z-40 lg:hidden',
+          // Abre visível na hora (o foco já pode entrar); ao fechar, some só no fim do deslize.
+          menuOpen ? 'visible' : 'invisible transition-[visibility] duration-300',
+        )}
+      >
+        <button
+          type="button"
+          aria-label="Fechar menu"
+          tabIndex={-1}
+          className={cn(
+            'absolute inset-0 bg-ink/40 transition-opacity duration-200',
+            menuOpen ? 'opacity-100' : 'opacity-0',
+          )}
+          onClick={fecharMenu}
+        />
+        <div
+          id="menu-movel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
+          className={cn(
+            'absolute inset-y-0 right-0 flex w-[min(320px,85vw)] flex-col gap-6 overflow-y-auto bg-paper px-4 py-4 shadow-raised',
+            'transition-transform duration-300 ease-(--ease-suave)',
+            menuOpen ? 'translate-x-0' : 'translate-x-full',
+          )}
+        >
+          <div className="flex items-center justify-between">
+            <BrandMark />
+            <button
+              ref={fecharMenuRef}
+              type="button"
+              onClick={fecharMenu}
+              aria-label="Fechar menu"
+              className="grid size-10 place-items-center rounded-md hover:bg-canvas"
+            >
+              <X aria-hidden className="size-5" />
+            </button>
+          </div>
+          <SideNav perfil={usuario.perfil} onNavigate={() => setMenuOpen(false)} />
+          <div className="mt-auto">
+            <UserMenu usuario={usuario} onNavigate={() => setMenuOpen(false)} />
           </div>
         </div>
-      )}
+      </div>
 
       <main id="conteudo" inert={menuOpen} className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-        <div className="mx-auto max-w-6xl">
+        {/* A cada página nova, o conteúdo entra com um fade curto. */}
+        <div key={location.pathname} className="mx-auto max-w-6xl animate-entrar">
           <Outlet />
         </div>
       </main>
+
+      <Avisos />
     </div>
   );
 }

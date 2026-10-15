@@ -11,6 +11,8 @@ import { useSessao } from '../features/auth/session';
 import { useConfiguracoes, useCriarReserva } from '../features/reservas/api';
 import { ReservaForm, valoresIniciais } from '../features/reservas/ReservaForm';
 import { useSalas } from '../features/salas/api';
+import { avisar } from '../features/avisos/store';
+import { formatDiaCurto, formatHorario } from '../lib/format';
 
 export function NewReservationPage() {
   const [params] = useSearchParams();
@@ -92,10 +94,13 @@ export function NewReservationPage() {
           erro={criar.error}
           onSubmit={(dados) =>
             criar.mutate(dados, {
-              onSuccess: (reserva) =>
-                navigate(`/reservas/${reserva.id}`, {
-                  state: { aviso: 'Reserva confirmada.' },
-                }),
+              onSuccess: (reserva) => {
+                avisar(
+                  'Reserva confirmada.',
+                  `${reserva.sala.nome} · ${formatDiaCurto(reserva.inicio)}, ${formatHorario(reserva.inicio, reserva.fim, reserva.diaInteiro)}`,
+                );
+                navigate(`/reservas/${reserva.id}`);
+              },
             })
           }
           onCancel={() => navigate(-1)}

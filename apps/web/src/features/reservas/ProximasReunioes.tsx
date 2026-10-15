@@ -4,16 +4,17 @@ import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
 import { ButtonLink } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { Spinner } from '../../components/ui/Spinner';
 import { formatDiaCurto, formatHorario } from '../../lib/format';
 import { errorMessage } from '../../lib/forms';
 import { useMinhasReservas } from './api';
+import { SkeletonLista } from '../../components/ui/Skeleton';
 
 /** Próximas reuniões de quem está logado (tela inicial). */
 export function ProximasReunioes() {
   const reservas = useMinhasReservas('proximas', 6);
 
-  if (reservas.isPending) return <Spinner label="Carregando suas reuniões" />;
+  if (reservas.isPending)
+    return <SkeletonLista label="Carregando suas reuniões" linhas={3} cartao={false} />;
   if (reservas.isError) return <Alert tone="error" title={errorMessage(reservas.error)} />;
 
   if (reservas.data.length === 0) {

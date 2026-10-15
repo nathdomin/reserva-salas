@@ -41,7 +41,7 @@ export function CalendarioMes({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-line bg-paper">
+    <div className="overflow-hidden rounded-xl border border-line bg-paper shadow-card">
       <div className="grid grid-cols-7 border-b border-line" aria-hidden>
         {semanas[0]!.map((dia) => (
           <div key={dia} className="px-2 py-2 text-center text-xs font-medium text-muted">

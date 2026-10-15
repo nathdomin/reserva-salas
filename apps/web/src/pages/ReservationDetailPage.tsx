@@ -15,6 +15,8 @@ import { useReserva } from '../features/reservas/api';
 import { CancelarReserva } from '../features/reservas/CancelarReserva';
 import { formatDateTime, formatHorario, formatLongDate } from '../lib/format';
 import { errorMessage } from '../lib/forms';
+import { avisar } from '../features/avisos/store';
+import { SkeletonLista } from '../components/ui/Skeleton';
 
 function Info({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   return (
@@ -29,11 +31,9 @@ export function ReservationDetailPage() {
   const { id = '' } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const aviso = (location.state as { aviso?: string } | null)?.aviso;
   const { data: usuario } = useSessao();
   const reserva = useReserva(id);
   const [confirmando, setConfirmando] = useState(false);
-  const [cancelada, setCancelada] = useState(false);
 
   const r = reserva.data;
   const deOutraPessoa = Boolean(r && usuario && r.responsavel.id !== usuario.id);
@@ -51,7 +51,7 @@ export function ReservationDetailPage() {
         Voltar
       </button>
 
-      {reserva.isPending && <Spinner label="Carregando reserva" />}
+      {reserva.isPending && <SkeletonLista label="Carregando reserva" linhas={3} />}
       {reserva.isError && <Alert tone="error" title={errorMessage(reserva.error)} />}
 
       {r && (
@@ -68,15 +68,6 @@ export function ReservationDetailPage() {
               ) : undefined
             }
           />
-
-          {aviso && !cancelada && <Alert tone="success" title={aviso} className="mb-6" />}
-          {cancelada && (
-            <Alert
-              tone="success"
-              title="Reserva cancelada. O horário ficou livre para outras pessoas."
-              className="mb-6"
-            />
-          )}
 
           <Panel>
             <div className="mb-4 flex flex-wrap gap-2">
@@ -119,7 +110,7 @@ export function ReservationDetailPage() {
                 className="mt-6 border-t border-line pt-4"
                 onCancelada={() => {
                   setConfirmando(false);
-                  setCancelada(true);
+                  avisar('Reserva cancelada.', 'O horário ficou livre para outras pessoas.');
                 }}
                 onVoltar={() => setConfirmando(false)}
               />

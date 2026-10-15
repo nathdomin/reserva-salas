@@ -6,12 +6,13 @@ import { Button, ButtonLink } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Panel } from '../components/ui/Panel';
-import { Spinner } from '../components/ui/Spinner';
 import { useSessao } from '../features/auth/session';
 import { useMinhasReservas } from '../features/reservas/api';
 import { ListaReservas } from '../features/reservas/ListaReservas';
 import { cn } from '../lib/cn';
 import { errorMessage } from '../lib/forms';
+import { avisar } from '../features/avisos/store';
+import { SkeletonLista } from '../components/ui/Skeleton';
 
 type Aba = 'proximas' | 'anteriores';
 
@@ -27,12 +28,10 @@ export function MyReservationsPage() {
   const [params, setParams] = useSearchParams();
   const aba: Aba = params.get('aba') === 'anteriores' ? 'anteriores' : 'proximas';
   const [limite, setLimite] = useState(PASSO);
-  const [aviso, setAviso] = useState<string | null>(null);
   const { data: usuario } = useSessao();
   const reservas = useMinhasReservas(aba, limite);
 
   function trocarAba(nova: Aba) {
-    setAviso(null);
     setLimite(PASSO);
     setParams(nova === 'proximas' ? {} : { aba: nova });
   }
@@ -76,8 +75,7 @@ export function MyReservationsPage() {
       </div>
 
       <div role="tabpanel" id="painel-reservas" aria-labelledby={`aba-${aba}`}>
-        {aviso && <Alert tone="success" title={aviso} className="mb-4" />}
-        {reservas.isPending && <Spinner label="Carregando suas reservas" />}
+        {reservas.isPending && <SkeletonLista label="Carregando suas reservas" />}
         {reservas.isError && <Alert tone="error" title={errorMessage(reservas.error)} />}
 
         {reservas.isSuccess && lista.length === 0 && (
@@ -110,7 +108,7 @@ export function MyReservationsPage() {
               rotulo={aba === 'proximas' ? 'Próximas reservas' : 'Reservas anteriores'}
               usuarioId={usuario?.id}
               onCancelada={() =>
-                setAviso('Reserva cancelada. O horário ficou livre para outras pessoas.')
+                avisar('Reserva cancelada. O horário ficou livre para outras pessoas.')
               }
             />
             {lista.length >= limite && limite < MAXIMO && (

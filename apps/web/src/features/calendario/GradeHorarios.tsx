@@ -89,7 +89,7 @@ export function GradeHorarios({
 
   return (
     // Rolagem própria (limitada à altura da tela) para o cabeçalho ficar fixo no topo da grade.
-    <div className="max-h-[calc(100dvh-7rem)] overflow-auto overscroll-contain rounded-lg border border-line bg-paper">
+    <div className="max-h-[calc(100dvh-7rem)] overflow-auto overscroll-contain rounded-xl border border-line bg-paper shadow-card">
       <div style={{ minWidth: 56 + colunas.length * larguraColuna }}>
         {/* Cabeçalho */}
         <div className="sticky top-0 z-40 flex border-b border-line bg-paper">

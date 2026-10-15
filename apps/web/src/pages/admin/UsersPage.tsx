@@ -8,13 +8,14 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Field, Input, Select } from '../../components/ui/Field';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Panel } from '../../components/ui/Panel';
-import { Spinner } from '../../components/ui/Spinner';
 import { useSessao } from '../../features/auth/session';
 import { useAtualizarUsuario, useUsuarios } from '../../features/users/api';
 import { ResetPasswordForm, UserForm } from '../../features/users/UserForms';
 import { ApiError } from '../../lib/api';
 import { formatDateTime, formatDiaCurto, formatHorario } from '../../lib/format';
 import { errorMessage } from '../../lib/forms';
+import { avisar } from '../../features/avisos/store';
+import { SkeletonLista } from '../../components/ui/Skeleton';
 
 type Painel =
   | { tipo: 'criar' }
@@ -43,7 +44,6 @@ export function UsersPage() {
   const atualizar = useAtualizarUsuario();
 
   const [painel, setPainel] = useState<Painel>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
   const [confirmando, setConfirmando] = useState<string | null>(null);
   const [decisao, setDecisao] = useState<ReservasFuturas | null>(null);
@@ -61,7 +61,6 @@ export function UsersPage() {
 
   function abrir(novo: Painel) {
     setPainel(novo);
-    setAviso(null);
     setErroAcao(null);
     setConfirmando(null);
     setDecisao(null);
@@ -69,7 +68,7 @@ export function UsersPage() {
 
   function concluir(mensagem: string) {
     setPainel(null);
-    setAviso(mensagem);
+    avisar(mensagem);
   }
 
   function alterarStatus(
@@ -77,7 +76,6 @@ export function UsersPage() {
     ativo: boolean,
     reservasFuturas?: 'manter' | 'cancelar',
   ) {
-    setAviso(null);
     setErroAcao(null);
     atualizar.mutate(
       { id: usuario.id, dados: { ativo, ...(reservasFuturas ? { reservasFuturas } : {}) } },
@@ -85,7 +83,7 @@ export function UsersPage() {
         onSuccess: ({ usuario: u, reservasCanceladas }) => {
           setConfirmando(null);
           setDecisao(null);
-          setAviso(
+          avisar(
             ativo
               ? `${u.nome} foi reativado(a) e já pode entrar no sistema.`
               : reservasCanceladas > 0
@@ -122,7 +120,6 @@ export function UsersPage() {
         }
       />
 
-      {aviso && <Alert tone="success" title={aviso} className="mb-6" />}
       {erroAcao && <Alert tone="error" title={erroAcao} className="mb-6" />}
 
       {decisao && (
@@ -192,7 +189,7 @@ export function UsersPage() {
           </Field>
         </div>
 
-        {usuarios.isPending && <Spinner className="py-6" label="Carregando usuários" />}
+        {usuarios.isPending && <SkeletonLista label="Carregando usuários" cartao={false} />}
 
         {usuarios.isError && (
           <Alert
@@ -242,7 +239,7 @@ export function UsersPage() {
                         {PERFIL_LABEL[u.perfil]}
                       </Badge>
                       {!u.ativo && <Badge tone="muted">Inativo</Badge>}
-                      {u.bloqueado && <Badge tone="alert">Bloqueado por tentativas</Badge>}
+                      {u.bloqueado && <Badge tone="warn">Bloqueado por tentativas</Badge>}
                     </div>
                     <p className="mt-0.5 truncate text-sm text-muted">{u.email}</p>
                     <p className="mt-0.5 text-xs text-muted">
@@ -292,7 +289,6 @@ export function UsersPage() {
                           variant="danger"
                           onClick={() => {
                             setConfirmando(u.id);
-                            setAviso(null);
                           }}
                         >
                           Desativar

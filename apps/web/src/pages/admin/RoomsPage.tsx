@@ -7,12 +7,13 @@ import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Panel } from '../../components/ui/Panel';
-import { Spinner } from '../../components/ui/Spinner';
 import { useAtualizarSala, useSalas } from '../../features/salas/api';
 import { SalaForm } from '../../features/salas/SalaForm';
 import { ApiError } from '../../lib/api';
 import { formatDiaCurto, formatHorario } from '../../lib/format';
 import { errorMessage } from '../../lib/forms';
+import { avisar } from '../../features/avisos/store';
+import { SkeletonLista } from '../../components/ui/Skeleton';
 
 type Painel = { tipo: 'criar' } | { tipo: 'editar'; sala: Sala } | null;
 
@@ -26,13 +27,11 @@ export function RoomsPage() {
   const salas = useSalas(true);
   const atualizar = useAtualizarSala();
   const [painel, setPainel] = useState<Painel>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [confirmando, setConfirmando] = useState<string | null>(null);
   const [decisao, setDecisao] = useState<ReservasFuturas | null>(null);
 
   function limparMensagens() {
-    setAviso(null);
     setErro(null);
   }
 
@@ -44,7 +43,7 @@ export function RoomsPage() {
         onSuccess: ({ reservasCanceladas }) => {
           setConfirmando(null);
           setDecisao(null);
-          setAviso(
+          avisar(
             reservasCanceladas > 0
               ? `Sala ${sala.nome} desativada e ${reservasCanceladas} reserva(s) futura(s) cancelada(s).`
               : `Sala ${sala.nome} desativada. Ela não recebe novas reservas; o histórico foi mantido.`,
@@ -68,7 +67,7 @@ export function RoomsPage() {
     atualizar.mutate(
       { id: sala.id, dados: { ativo: true } },
       {
-        onSuccess: () => setAviso(`Sala ${sala.nome} reativada.`),
+        onSuccess: () => avisar(`Sala ${sala.nome} reativada.`),
         onError: (error) => setErro(errorMessage(error)),
       },
     );
@@ -92,7 +91,6 @@ export function RoomsPage() {
         }
       />
 
-      {aviso && <Alert tone="success" title={aviso} className="mb-6" />}
       {erro && <Alert tone="error" title={erro} className="mb-6" />}
 
       {decisao && (
@@ -134,7 +132,7 @@ export function RoomsPage() {
           onCancel={() => setPainel(null)}
           onSaved={(m) => {
             setPainel(null);
-            setAviso(m);
+            avisar(m);
           }}
         />
       )}
@@ -145,12 +143,12 @@ export function RoomsPage() {
           onCancel={() => setPainel(null)}
           onSaved={(m) => {
             setPainel(null);
-            setAviso(m);
+            avisar(m);
           }}
         />
       )}
 
-      {salas.isPending && <Spinner label="Carregando salas" />}
+      {salas.isPending && <SkeletonLista label="Carregando salas" linhas={3} />}
       {salas.isError && <Alert tone="error" title={errorMessage(salas.error)} />}
 
       {salas.isSuccess && salas.data.length === 0 && (
@@ -166,7 +164,10 @@ export function RoomsPage() {
       {salas.isSuccess && salas.data.length > 0 && (
         <ul className="grid gap-4 md:grid-cols-2" aria-label="Lista de salas">
           {salas.data.map((s) => (
-            <li key={s.id} className="flex flex-col rounded-lg border border-line bg-paper p-5">
+            <li
+              key={s.id}
+              className="flex flex-col rounded-xl border border-line bg-paper shadow-card p-5"
+            >
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-semibold">{s.nome}</h2>
                 {!s.ativo && <Badge tone="muted">Desativada</Badge>}

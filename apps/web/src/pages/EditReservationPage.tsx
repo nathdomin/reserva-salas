@@ -8,6 +8,8 @@ import { useConfiguracoes, useEditarReserva, useReserva } from '../features/rese
 import { ReservaForm } from '../features/reservas/ReservaForm';
 import { useSalas } from '../features/salas/api';
 import { errorMessage } from '../lib/forms';
+import { avisar } from '../features/avisos/store';
+import { formatDiaCurto, formatHorario } from '../lib/format';
 
 export function EditReservationPage() {
   const { id = '' } = useParams();
@@ -80,10 +82,13 @@ export function EditReservationPage() {
             editar.mutate(
               { ...dados, versao: r.versao },
               {
-                onSuccess: (atualizada) =>
-                  navigate(`/reservas/${atualizada.id}`, {
-                    state: { aviso: 'Reserva atualizada.' },
-                  }),
+                onSuccess: (reserva) => {
+                  avisar(
+                    'Reserva atualizada.',
+                    `${reserva.sala.nome} · ${formatDiaCurto(reserva.inicio)}, ${formatHorario(reserva.inicio, reserva.fim, reserva.diaInteiro)}`,
+                  );
+                  navigate(`/reservas/${reserva.id}`);
+                },
               },
             )
           }

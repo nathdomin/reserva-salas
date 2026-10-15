@@ -7,7 +7,7 @@ PowerShell, na pasta do projeto.
 
 | Quando                    | O quê                                                                                                 |
 | ------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Todo dia                  | Backup automático (tarefa `MeetKof - Backup`).                                                        |
+| Todo dia                  | Backup automático (tarefa `MeetKof - Backup` no servidor, ou o workflow do GitHub no Render).         |
 | Toda semana               | Conferir `logs\backup.log` (linhas `OK`) e copiar o backup mais recente para fora do servidor.        |
 | Todo mês                  | Testar a restauração de um backup. Rodar `npm audit`. Ver o tamanho do banco.                         |
 | A cada 6 meses            | Revisar administradores e usuários ativos. Trocar as senhas do banco. Revisar [CONTAS.md](CONTAS.md). |
@@ -39,6 +39,67 @@ Get-Content logs\backup.log -Tail 5
 ```powershell
 npm run db:backup
 ```
+
+### Backup automático (GitHub)
+
+Para a versão no **Render**, onde não há servidor da empresa para a tarefa agendada. Gratuito:
+o workflow [`.github/workflows/backup-diario.yml`](../.github/workflows/backup-diario.yml)
+roda no GitHub Actions e:
+
+- **todo dia às 06:30**, gera o backup, **criptografa** e guarda por **90 dias** na aba
+  **Actions** do repositório;
+- **às 06:30 e às 14:00**, abre o site (`/api/health`). Isso também evita que o Supabase
+  gratuito **pause o projeto** por falta de uso (por exemplo, num recesso);
+- se algo falhar, o GitHub manda um e-mail.
+
+O GitHub nunca vê os dados abertos: o arquivo é criptografado com a **chave pública** antes de
+ser guardado, e só quem tem a **chave privada** consegue abri-lo. O workflow usa um usuário do
+banco que **só lê** (`reserva_backup`).
+
+#### Configurar (uma vez)
+
+1. **Usuário de leitura no banco.** Supabase → **SQL Editor** → cole
+   `database\papel-backup.sql`, troque a senha **no editor** (16+ letras e números) → **Run**.
+2. **Chave de criptografia** (no seu computador, uma vez):
+
+   ```powershell
+   winget install FiloSottile.age
+   age-keygen -o chave-backup-meetkof.txt
+   ```
+
+   O comando mostra a chave pública (`Public key: age1...`). O arquivo
+   `chave-backup-meetkof.txt` é a **chave privada**: guarde-o no gerenciador de senhas da
+   empresa ou num pendrive criptografado, **fora do OneDrive e fora do projeto**. Sem ele os
+   backups não podem ser abertos; com ele, qualquer pessoa pode abri-los.
+
+3. **GitHub** → repositório → **Settings → Secrets and variables → Actions**:
+
+   | Onde          | Nome                   | Valor                                                                                |
+   | ------------- | ---------------------- | ------------------------------------------------------------------------------------ |
+   | **Secrets**   | `BACKUP_DATABASE_URL`  | `postgresql://reserva_backup.<id-do-projeto>:<senha>@<host-do-pooler>:5432/postgres` |
+   | **Variables** | `BACKUP_AGE_RECIPIENT` | A chave pública (`age1...`)                                                          |
+   | **Variables** | `APP_URL`              | O endereço do sistema no Render (ex.: `https://reserva-salas.onrender.com`)          |
+
+   O `<id-do-projeto>` e o `<host-do-pooler>` são os mesmos do `DATABASE_URL` do `.env`.
+
+4. **Testar:** **Actions → Backup diário e verificação do site → Run workflow**. Em ~2 minutos,
+   os dois passos ficam verdes e o backup aparece em **Artifacts**, no fim da página da execução.
+
+> Se ligar as **Network Restrictions** do Supabase ([CONTAS.md](CONTAS.md)), o GitHub deixa de
+> conseguir conectar (os endereços dele mudam a cada execução) e o backup passa a falhar. Nesse
+> caso, volte ao backup manual ou faça-o de uma máquina com IP liberado.
+
+#### Restaurar um backup do GitHub
+
+1. **Actions** → a execução do dia → **Artifacts** → baixe e extraia o `.zip`.
+2. Abra com a chave privada:
+
+   ```powershell
+   age --decrypt -i C:\caminho\chave-backup-meetkof.txt -o reserva.sql reserva-AAAA-MM-DD-HHmm.sql.age
+   ```
+
+3. Restaure como qualquer backup ([Testar a restauração](#testar-a-restauração-mensal) e
+   [BANCO.md](BANCO.md#backup-e-restauração)) e **apague o `reserva.sql` aberto** ao terminar.
 
 ### Cópia fora do servidor (importante)
 

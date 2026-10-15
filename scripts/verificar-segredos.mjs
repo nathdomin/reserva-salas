@@ -13,6 +13,11 @@ const ARQUIVOS = [
     esperado: /^\s*senha text := 'TROQUE-ESTA-SENHA';/m,
     dica: "troque a senha só no SQL Editor do Supabase; aqui deve ficar 'TROQUE-ESTA-SENHA'",
   },
+  {
+    arquivo: 'database/papel-backup.sql',
+    esperado: /^\s*senha text := 'TROQUE-ESTA-SENHA';/m,
+    dica: "troque a senha só no SQL Editor do Supabase; aqui deve ficar 'TROQUE-ESTA-SENHA'",
+  },
 ];
 
 const problemas = ARQUIVOS.filter(({ arquivo, esperado }) => {

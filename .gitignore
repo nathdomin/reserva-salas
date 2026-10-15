@@ -13,3 +13,7 @@ test-results/
 # Backups contêm dados pessoais: nunca versionar.
 backups/
 logs/
+
+# Chave privada dos backups criptografados: nunca versionar.
+chave-backup*
+*.sql.age

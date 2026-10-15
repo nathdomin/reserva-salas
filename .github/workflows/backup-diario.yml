@@ -1,0 +1,108 @@
+# =====================================================================
+# Backup diário + verificação do site (gratuito, no GitHub Actions).
+#
+# - Todo dia de manhã: gera o backup do banco, CRIPTOGRAFA com a chave pública da empresa
+#   (age) e guarda como "artefato" do GitHub por 90 dias. Sem a chave privada, que fica só
+#   com quem administra o sistema, ninguém consegue ler o arquivo (nem o GitHub).
+# - Duas vezes por dia: abre /api/health no Render. Isso acorda o site e faz consultas no
+#   banco, o que também evita que o Supabase gratuito pause o projeto por falta de uso.
+# - Se algo falhar, o GitHub envia um e-mail para quem configurou o workflow.
+#
+# Configuração (uma vez): docs/MANUTENCAO.md › Backup automático (GitHub)
+# =====================================================================
+name: Backup diário e verificação do site
+
+on:
+  schedule:
+    - cron: '30 9 * * *' # 06:30 em Brasília: backup + verificação
+    - cron: '0 17 * * *' # 14:00 em Brasília: só verificação
+  workflow_dispatch: # botão "Run workflow" na aba Actions (teste manual)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-diario
+  cancel-in-progress: false
+
+jobs:
+  verificar-site:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Abrir /api/health
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "::error::Defina a variável APP_URL (Settings > Secrets and variables > Actions > Variables)."
+            exit 1
+          fi
+          # No plano gratuito o Render pode levar ~1 minuto para acordar.
+          curl --fail --silent --show-error --max-time 120 \
+               --retry 5 --retry-delay 30 --retry-all-errors \
+               "${APP_URL%/}/api/health"
+          echo
+
+  backup:
+    # Só no horário da manhã ou quando acionado à mão.
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 9 * * *'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Conferir a configuração
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          falta=0
+          [ -n "$BACKUP_DATABASE_URL" ] || { echo "::error::Falta o segredo BACKUP_DATABASE_URL."; falta=1; }
+          [ -n "$APP_URL" ] || { echo "::error::Falta a variável APP_URL."; falta=1; }
+          case "$BACKUP_AGE_RECIPIENT" in
+            age1*) ;;
+            *) echo "::error::A variável BACKUP_AGE_RECIPIENT deve ser a chave pública do age (começa com age1)."; falta=1 ;;
+          esac
+          exit $falta
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Instalar o age (criptografia)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age
+
+      - name: Gerar o backup e criptografar
+        id: backup
+        env:
+          NODE_ENV: production
+          APP_ORIGIN: ${{ vars.APP_URL }}
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          DATABASE_SSL: verify-full
+          DATABASE_SSL_CA: certs/supabase-ca.crt
+          BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+        run: |
+          set -euo pipefail
+          umask 077
+          nome="reserva-$(TZ=America/Sao_Paulo date +%Y-%m-%d-%H%M)"
+          pasta="$RUNNER_TEMP/backup"
+          mkdir -p "$pasta"
+          npm run -s db:backup -- "$pasta/$nome.sql"
+          age --encrypt --recipient "$BACKUP_AGE_RECIPIENT" --output "$pasta/$nome.sql.age" "$pasta/$nome.sql"
+          # O arquivo aberto nunca sai daqui: só o criptografado é guardado.
+          shred -u "$pasta/$nome.sql"
+          echo "nome=$nome" >> "$GITHUB_OUTPUT"
+          echo "arquivo=$pasta/$nome.sql.age" >> "$GITHUB_OUTPUT"
+
+      - name: Guardar o backup criptografado (90 dias)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.backup.outputs.nome }}
+          path: ${{ steps.backup.outputs.arquivo }}
+          retention-days: 90
+          if-no-files-found: error

@@ -8,6 +8,7 @@ os dados.
 | ----------------------------------------------------------------- | ------------------------------------------------------------------- |
 | [`database/supabase.sql`](../database/supabase.sql)               | Estrutura completa (tabelas, regras, índices). Colar no SQL Editor. |
 | [`database/papel-aplicacao.sql`](../database/papel-aplicacao.sql) | Cria o usuário `reserva_app`, de permissões mínimas (produção).     |
+| [`database/papel-backup.sql`](../database/papel-backup.sql)       | Cria o usuário `reserva_backup`, só de leitura (backup no GitHub).  |
 | [`database/consultas-uteis.sql`](../database/consultas-uteis.sql) | Consultas somente leitura para o administrador.                     |
 | `apps/api/src/db/migrations/*.sql`                                | Origem da estrutura. O `supabase.sql` é gerado a partir delas.      |
 

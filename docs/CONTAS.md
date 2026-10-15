@@ -57,6 +57,9 @@ Supabase → projeto → **Database** → **Settings** → **Network Restriction
   compartilhados com outros clientes do Render: a proteção é menor, mas ainda reduz o risco).
 - O IP de quem roda `db:migrate`, `db:backup` e `db:restaurar`, se for outra máquina.
 
+> **Atenção:** com a restrição ligada, o backup automático pelo GitHub para de funcionar (os
+> endereços do GitHub mudam a cada execução). Veja [MANUTENCAO.md](MANUTENCAO.md#backup-automático-github).
+>
 > Se a lista ficar errada, o sistema mostra o banco **Indisponível**. Para desfazer, volte à mesma
 > tela e libere de novo `0.0.0.0/0`. Se a conexão usar IPv6, inclua também as faixas IPv6.
 

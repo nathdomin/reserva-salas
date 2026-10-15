@@ -136,14 +136,12 @@ Render para voltar à publicação anterior.
 ## Backups
 
 O Render não guarda dados (tudo fica no Supabase), e o plano gratuito do Supabase não faz backup
-automático. Rode no seu computador, **pelo menos uma vez por semana**:
+automático. Configure o **backup automático no GitHub** (gratuito, diário, criptografado; também
+evita que o Supabase pause o projeto por falta de uso):
+[MANUTENCAO.md › Backup automático (GitHub)](MANUTENCAO.md#backup-automático-github).
 
-```powershell
-npm run db:backup
-```
-
-Guarde os arquivos de `backups\` em local protegido: eles contêm dados pessoais. Restauração e
-teste de restauração: [MANUTENCAO.md](MANUTENCAO.md#backups).
+Sem ele, rode no seu computador, **pelo menos uma vez por semana**, `npm run db:backup` e guarde
+os arquivos de `backups\` em local protegido: eles contêm dados pessoais.
 
 ## Problemas comuns
 

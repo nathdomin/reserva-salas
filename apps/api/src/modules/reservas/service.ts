@@ -31,7 +31,6 @@ import {
   MINHAS_PROXIMAS,
   OCUPADOS_NO_PERIODO,
   SALAS_LIVRES,
-  TRAVAR_SALA,
   TRAVAR_USUARIO,
 } from './sql';
 
@@ -199,9 +198,17 @@ function conflitoSimples(): AppError {
   );
 }
 
-export function createReservasService(database: Database, opcoes: { agora?: () => Date } = {}) {
+export function createReservasService(
+  database: Database,
+  opcoes: {
+    agora?: () => Date;
+    /** De onde vêm as configurações (o app passa o cache; padrão: sempre do banco). */
+    configuracoes?: () => Promise<Configuracoes>;
+  } = {},
+) {
   const db = database.pool;
   const agora = opcoes.agora ?? (() => new Date());
+  const obterConfiguracoes = opcoes.configuracoes ?? (() => carregarConfiguracoes(db));
 
   async function buscarRow(q: Queryable, id: string, paraAlterar = false) {
     const { rows } = await q.query<ReservaRow>(
@@ -268,7 +275,12 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
     );
   }
 
-  /** Trava a sala e verifica conflitos. Deve rodar dentro de uma transação. */
+  /**
+   * Verifica conflitos. Deve rodar dentro de uma transação, DEPOIS de travar a linha da sala
+   * (buscarSala com paraAlterar): é essa trava que impede duas pessoas de validarem o mesmo
+   * horário da mesma sala ao mesmo tempo. A trava precisa vir numa consulta anterior a esta,
+   * para que esta já enxergue a reserva de quem terminou antes.
+   */
   async function garantirSemConflito(
     tx: Queryable,
     p: {
@@ -280,7 +292,6 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
       config: Configuracoes;
     },
   ) {
-    await tx.query(TRAVAR_SALA, [p.sala.id]);
     const { rows } = await tx.query<{ id: string; inicio: Date; fim: Date }>(CONFLITOS, [
       p.sala.id,
       p.periodo.inicio,
@@ -304,7 +315,7 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
   }
 
   return {
-    configuracoes: () => carregarConfiguracoes(db),
+    configuracoes: obterConfiguracoes,
 
     async listarPeriodo(
       viewer: UsuarioSessao,
@@ -329,7 +340,7 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
           );
         }
       }
-      const config = await carregarConfiguracoes(db);
+      const config = await obterConfiguracoes();
       const { rows } = await db.query<ReservaRow>(LISTAR_RESERVAS_PERIODO, [
         paraInstante(filtros.dataInicio, '00:00'),
         paraInstante(somarDias(filtros.dataFim, 1), '00:00'),
@@ -346,7 +357,7 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
       tipo: 'proximas' | 'anteriores',
       limite: number,
     ): Promise<Reserva[]> {
-      const config = await carregarConfiguracoes(db);
+      const config = await obterConfiguracoes();
       const { rows } = await db.query<ReservaRow>(
         tipo === 'proximas' ? MINHAS_PROXIMAS : MINHAS_ANTERIORES,
         [viewer.id, limite],
@@ -356,12 +367,12 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
     },
 
     async buscar(viewer: UsuarioSessao, id: string): Promise<Reserva> {
-      const config = await carregarConfiguracoes(db);
+      const config = await obterConfiguracoes();
       return serializarReserva(await buscarRow(db, id), viewer, config, agora());
     },
 
     async criar(viewer: UsuarioSessao, ip: string, input: ReservaInput): Promise<Reserva> {
-      const config = await carregarConfiguracoes(db);
+      const config = await obterConfiguracoes();
       const agoraAtual = agora();
       return comConflitoDoBanco(() =>
         database.transaction(async (tx) => {
@@ -385,7 +396,7 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
             config,
           });
 
-          const { rows } = await tx.query<{ id: string }>(CRIAR_RESERVA, [
+          const { rows } = await tx.query<ReservaRow>(CRIAR_RESERVA, [
             sala.id,
             viewer.id,
             input.motivo,
@@ -394,7 +405,8 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
             periodo.fim,
             input.diaInteiro,
           ]);
-          const id = rows[0]!.id;
+          const criada = rows[0]!;
+          const id = criada.id;
           await registrarAuditoria(tx, {
             atorId: viewer.id,
             acao: 'RESERVA_CRIADA',
@@ -410,7 +422,7 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
             },
             ip,
           });
-          return serializarReserva(await buscarRow(tx, id), viewer, config, agoraAtual);
+          return serializarReserva(criada, viewer, config, agoraAtual);
         }),
       );
     },
@@ -421,7 +433,7 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
       id: string,
       input: EditarReservaInput,
     ): Promise<Reserva> {
-      const config = await carregarConfiguracoes(db);
+      const config = await obterConfiguracoes();
       const agoraAtual = agora();
       return comConflitoDoBanco(() =>
         database.transaction(async (tx) => {
@@ -472,7 +484,7 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
             });
           }
 
-          const { rows } = await tx.query<{ id: string }>(ATUALIZAR_RESERVA, [
+          const { rows } = await tx.query<ReservaRow>(ATUALIZAR_RESERVA, [
             id,
             sala.id,
             input.motivo,
@@ -482,7 +494,8 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
             input.diaInteiro,
             input.versao,
           ]);
-          if (!rows[0]) {
+          const alterada = rows[0];
+          if (!alterada) {
             throw new AppError(
               409,
               ERROR_CODES.RESERVA_ALTERADA,
@@ -515,7 +528,7 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
               ip,
             });
           }
-          return serializarReserva(await buscarRow(tx, id), viewer, config, agoraAtual);
+          return serializarReserva(alterada, viewer, config, agoraAtual);
         }),
       );
     },
@@ -526,7 +539,7 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
       id: string,
       motivo: string | undefined,
     ): Promise<Reserva> {
-      const config = await carregarConfiguracoes(db);
+      const config = await obterConfiguracoes();
       const agoraAtual = agora();
       return database.transaction(async (tx) => {
         const atual = await buscarRow(tx, id, true);
@@ -539,7 +552,13 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
             { campo: 'motivo', mensagem },
           ]);
         }
-        await tx.query(CANCELAR_RESERVA, [id, viewer.id, motivo ?? null]);
+        // A linha está travada e ATIVA (verificado acima): o cancelamento sempre a devolve.
+        const { rows } = await tx.query<ReservaRow>(CANCELAR_RESERVA, [
+          id,
+          viewer.id,
+          motivo ?? null,
+        ]);
+        const cancelada = rows[0]!;
         await registrarAuditoria(tx, {
           atorId: viewer.id,
           acao: 'RESERVA_CANCELADA',
@@ -549,7 +568,7 @@ export function createReservasService(database: Database, opcoes: { agora?: () =
           depois: { status: 'CANCELADA', motivoCancelamento: motivo ?? null },
           ip,
         });
-        return serializarReserva(await buscarRow(tx, id), viewer, config, agoraAtual);
+        return serializarReserva(cancelada, viewer, config, agoraAtual);
       });
     },
   };

@@ -26,7 +26,13 @@ const ATUALIZAR_CONFIGURACOES = `
          desativar_apos_dias_sem_login = $10
    where id`;
 
-export function createConfiguracoesService(database: Database) {
+export function createConfiguracoesService(
+  database: Database,
+  opcoes: {
+    /** Chamado após cada tentativa de alteração (ex.: limpar o cache). */
+    aoAlterar?: () => void;
+  } = {},
+) {
   return {
     /**
      * Aplica as alterações sobre a configuração atual e valida o conjunto.
@@ -82,6 +88,8 @@ export function createConfiguracoesService(database: Database) {
           throw new AppError(400, ERROR_CODES.VALIDATION, 'Configuração inválida.');
         }
         throw error;
+      } finally {
+        opcoes.aoAlterar?.();
       }
     },
   };

@@ -27,7 +27,11 @@ export function createDatabase(options: DatabaseConnectionOptions): Database {
 
   const pool = new pg.Pool({
     ...config,
-    idleTimeoutMillis: 30_000,
+    // Abrir uma conexão com o Supabase (TCP + TLS + autenticação) custa várias idas e vindas
+    // até outra região. Conexões ociosas ficam abertas por 10 minutos para serem reaproveitadas
+    // entre um clique e outro; o keepAlive detecta as que a rede derrubou nesse meio-tempo.
+    idleTimeoutMillis: 10 * 60_000,
+    keepAlive: true,
     // Garante que nenhuma consulta fique presa indefinidamente.
     statement_timeout: 15_000,
     application_name: 'reserva-salas-api',

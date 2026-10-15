@@ -14,10 +14,11 @@ import { createAuthGuards } from './modules/auth/guards';
 import { authRoutes } from './modules/auth/routes';
 import { createSessionService } from './modules/auth/session';
 import { adminConfiguracoesRoutes } from './modules/configuracoes/routes';
+import { createConfiguracoesCache } from './modules/configuracoes/cache';
 import { createConfiguracoesService } from './modules/configuracoes/service';
 import { healthRoutes } from './modules/health/routes';
 import { configuracoesRoutes, reservasRoutes } from './modules/reservas/routes';
-import { createReservasService } from './modules/reservas/service';
+import { carregarConfiguracoes, createReservasService } from './modules/reservas/service';
 import { adminSalasRoutes, salasRoutes } from './modules/salas/routes';
 import { createSalasService } from './modules/salas/service';
 import { usersRoutes } from './modules/users/routes';
@@ -144,8 +145,14 @@ export async function buildApp({ env, database }: AppDeps) {
   }
   const users = createUsersService(database);
   const salas = createSalasService(database);
-  const reservas = createReservasService(database);
-  const configuracoes = createConfiguracoesService(database);
+  // Configurações em memória por 1 minuto (nos testes, sempre lidas do banco).
+  const cacheConfiguracoes = createConfiguracoesCache(() => carregarConfiguracoes(database.pool), {
+    ttlMs: env.NODE_ENV === 'test' ? 0 : 60_000,
+  });
+  const reservas = createReservasService(database, { configuracoes: cacheConfiguracoes.obter });
+  const configuracoes = createConfiguracoesService(database, {
+    aoAlterar: cacheConfiguracoes.invalidar,
+  });
   const auditoria = createAuditoriaService(database);
 
   await app.register(healthRoutes, { prefix: '/api', database });

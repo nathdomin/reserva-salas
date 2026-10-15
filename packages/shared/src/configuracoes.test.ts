@@ -11,6 +11,7 @@ const PADRAO: Configuracoes = {
   duracaoMaximaMinutos: 480,
   antecedenciaMaximaDias: 120,
   intervaloEntreReunioesMinutos: 0,
+  desativarAposDiasSemLogin: 60,
 };
 
 const campos = (c: Partial<Configuracoes>) =>
@@ -44,6 +45,14 @@ describe('atualizarConfiguracoesSchema', () => {
     expect(atualizarConfiguracoesSchema.safeParse({}).success).toBe(false);
   });
 
+  it('desativação por falta de uso: aceita desligar (null) e 15 a 365 dias', () => {
+    for (const valor of [null, 15, 60, 365]) {
+      expect(atualizarConfiguracoesSchema.parse({ desativarAposDiasSemLogin: valor })).toEqual({
+        desativarAposDiasSemLogin: valor,
+      });
+    }
+  });
+
   it('recusa valores fora dos limites', () => {
     for (const dados of [
       { granularidadeMinutos: 20 },
@@ -51,6 +60,8 @@ describe('atualizarConfiguracoesSchema', () => {
       { intervaloEntreReunioesMinutos: -5 },
       { horarioInicio: '7:00' },
       { duracaoMinimaMinutos: 2.5 },
+      { desativarAposDiasSemLogin: 10 },
+      { desativarAposDiasSemLogin: 400 },
     ]) {
       expect(atualizarConfiguracoesSchema.safeParse(dados).success, JSON.stringify(dados)).toBe(
         false,

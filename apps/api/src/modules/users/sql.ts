@@ -29,13 +29,14 @@ export const CRIAR_USUARIO = `
   values ($1, $2, $3::reserva.perfil, $4)
   returning ${CAMPOS_USUARIO}`;
 
-/** Campos null não são alterados. */
+/** Campos null não são alterados. Reativar recomeça a contagem de dias sem uso. */
 export const ATUALIZAR_USUARIO = `
   update reserva.usuarios
      set nome   = coalesce($2::text, nome),
          email  = coalesce($3::text, email),
          perfil = coalesce($4::reserva.perfil, perfil),
-         ativo  = coalesce($5::boolean, ativo)
+         ativo  = coalesce($5::boolean, ativo),
+         ativado_em = case when $5::boolean and not ativo then now() else ativado_em end
    where id = $1
   returning ${CAMPOS_USUARIO}`;
 
@@ -48,9 +49,34 @@ export const REDEFINIR_SENHA = `
 export const PROMOVER_E_REDEFINIR = `
   update reserva.usuarios
      set nome = $2, perfil = 'ADMIN', ativo = true, senha_hash = $3,
-         senha_alterada_em = now(), tentativas_falhas = 0, bloqueado_ate = null
+         senha_alterada_em = now(), tentativas_falhas = 0, bloqueado_ate = null,
+         ativado_em = case when ativo then ativado_em else now() end
    where id = $1
   returning ${CAMPOS_USUARIO}`;
+
+/**
+ * Desativa colaboradores sem login há mais dias que o configurado (nada, se desligado).
+ * A contagem parte do último login ou da criação/reativação da conta, o que for mais recente.
+ * Administradores nunca entram: o sistema não pode ficar sem quem o administra.
+ */
+export const DESATIVAR_SEM_USO = `
+  with alvos as (
+    select u.id
+      from reserva.usuarios u
+      join reserva.configuracoes c on c.id
+     where c.desativar_apos_dias_sem_login is not null
+       and u.ativo
+       and u.perfil <> 'ADMIN'
+       and greatest(u.ativado_em, u.ultimo_login_em)
+           < now() - make_interval(days => c.desativar_apos_dias_sem_login)
+       for update of u skip locked
+  )
+  update reserva.usuarios u
+     set ativo = false
+    from alvos, reserva.configuracoes c
+   where u.id = alvos.id and c.id
+  returning u.id, u.nome, greatest(u.ativado_em, u.ultimo_login_em) as ultimo_acesso,
+            c.desativar_apos_dias_sem_login as dias`;
 
 /**
  * Serializa operações que podem remover administradores: duas alterações simultâneas

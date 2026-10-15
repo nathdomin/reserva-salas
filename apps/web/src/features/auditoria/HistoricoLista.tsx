@@ -10,6 +10,8 @@ const CAMPOS: Record<string, string> = {
   perfil: 'Perfil',
   ativo: 'Ativo',
   minutos: 'Minutos de bloqueio',
+  ultimoAcesso: 'Último acesso',
+  diasSemLogin: 'Limite sem login (dias)',
   sala: 'Sala',
   localizacao: 'Localização',
   capacidade: 'Capacidade',
@@ -31,6 +33,7 @@ const CAMPOS: Record<string, string> = {
   duracaoMaximaMinutos: 'Duração máxima (min)',
   antecedenciaMaximaDias: 'Antecedência máxima (dias)',
   intervaloEntreReunioesMinutos: 'Intervalo entre reuniões (min)',
+  desativarAposDiasSemLogin: 'Desativar sem login há (dias)',
 };
 
 /** Campos técnicos que não ajudam quem lê o histórico. */

@@ -5,13 +5,13 @@ PowerShell, na pasta do projeto.
 
 ## Resumo da rotina
 
-| Quando                    | O quê                                                                                          |
-| ------------------------- | ---------------------------------------------------------------------------------------------- |
-| Todo dia                  | Backup automático (tarefa `MeetKof - Backup`).                                                 |
-| Toda semana               | Conferir `logs\backup.log` (linhas `OK`) e copiar o backup mais recente para fora do servidor. |
-| Todo mês                  | Testar a restauração de um backup. Rodar `npm audit`. Ver o tamanho do banco.                  |
-| A cada 6 meses            | Revisar administradores e usuários ativos. Trocar as senhas do banco.                          |
-| Quando houver versão nova | Seguir [IMPLANTACAO.md › Atualizar o sistema](IMPLANTACAO.md#atualizar-o-sistema).             |
+| Quando                    | O quê                                                                                                 |
+| ------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Todo dia                  | Backup automático (tarefa `MeetKof - Backup`).                                                        |
+| Toda semana               | Conferir `logs\backup.log` (linhas `OK`) e copiar o backup mais recente para fora do servidor.        |
+| Todo mês                  | Testar a restauração de um backup. Rodar `npm audit`. Ver o tamanho do banco.                         |
+| A cada 6 meses            | Revisar administradores e usuários ativos. Trocar as senhas do banco. Revisar [CONTAS.md](CONTAS.md). |
+| Quando houver versão nova | Seguir [IMPLANTACAO.md › Atualizar o sistema](IMPLANTACAO.md#atualizar-o-sistema).                    |
 
 ## Backups
 
@@ -126,7 +126,9 @@ restaure sem `--substituir`.
 - Administrador único sem acesso: `npm run admin:create -- --force` no servidor
   ([INSTALACAO.md](INSTALACAO.md#4-criar-o-primeiro-administrador)).
 - Quem sai da empresa: **desative** o usuário no mesmo dia. As sessões dele são encerradas e o
-  histórico é mantido.
+  histórico é mantido. Se alguém esquecer, o sistema desativa sozinho o colaborador que passar
+  do prazo sem login (**Administração → Configurações → Acesso**, padrão 60 dias). Isso não vale
+  para administradores: desative-os sempre à mão.
 
 ## Revisão de acessos (a cada 6 meses)
 

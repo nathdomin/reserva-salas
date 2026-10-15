@@ -44,6 +44,7 @@ type ConfigRow = {
   duracao_maxima_minutos: number;
   antecedencia_maxima_dias: number;
   intervalo_entre_reunioes_minutos: number;
+  desativar_apos_dias_sem_login: number | null;
 };
 
 type ReservaRow = {
@@ -79,6 +80,7 @@ export async function carregarConfiguracoes(db: Queryable): Promise<Configuracoe
     duracaoMaximaMinutos: c.duracao_maxima_minutos,
     antecedenciaMaximaDias: c.antecedencia_maxima_dias,
     intervaloEntreReunioesMinutos: c.intervalo_entre_reunioes_minutos,
+    desativarAposDiasSemLogin: c.desativar_apos_dias_sem_login,
   };
 }
 

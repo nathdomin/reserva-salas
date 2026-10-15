@@ -21,7 +21,7 @@ import { createReservasService } from './modules/reservas/service';
 import { adminSalasRoutes, salasRoutes } from './modules/salas/routes';
 import { createSalasService } from './modules/salas/service';
 import { usersRoutes } from './modules/users/routes';
-import { createUsersService } from './modules/users/service';
+import { createUsersService, desativarContasSemUso } from './modules/users/service';
 import { registerErrorHandling, sendError } from './plugins/errors';
 import { registerOriginCheck } from './plugins/origin-check';
 
@@ -118,15 +118,29 @@ export async function buildApp({ env, database }: AppDeps) {
     }
   });
 
-  // Limpeza periódica das sessões expiradas (além da que acontece a cada login).
+  // Tarefas de hora em hora (e uma vez ao iniciar): limpar sessões expiradas (além da limpeza
+  // a cada login) e desativar contas sem uso (além da verificação no próprio login).
   if (env.NODE_ENV !== 'test') {
-    const limpeza = setInterval(() => {
+    const tarefas = () => {
       sessions.cleanupExpired().catch((err: unknown) => {
         app.log.warn({ err }, 'falha ao limpar sessões expiradas');
       });
-    }, 60 * 60_000);
-    limpeza.unref();
-    app.addHook('onClose', async () => clearInterval(limpeza));
+      desativarContasSemUso(database)
+        .then((total) => {
+          if (total > 0) app.log.warn(`${total} conta(s) desativada(s) por falta de uso.`);
+        })
+        .catch((err: unknown) => {
+          app.log.warn({ err }, 'falha ao desativar contas sem uso');
+        });
+    };
+    const inicial = setTimeout(tarefas, 10_000);
+    const periodica = setInterval(tarefas, 60 * 60_000);
+    inicial.unref();
+    periodica.unref();
+    app.addHook('onClose', async () => {
+      clearTimeout(inicial);
+      clearInterval(periodica);
+    });
   }
   const users = createUsersService(database);
   const salas = createSalasService(database);

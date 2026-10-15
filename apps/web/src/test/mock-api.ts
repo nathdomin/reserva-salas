@@ -100,6 +100,7 @@ export const CONFIG: Configuracoes = {
   duracaoMaximaMinutos: 480,
   antecedenciaMaximaDias: 120,
   intervaloEntreReunioesMinutos: 0,
+  desativarAposDiasSemLogin: 60,
 };
 
 export const SALA_AZUL: Sala = {

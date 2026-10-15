@@ -45,10 +45,14 @@ function paraValores(c: Configuracoes): Valores {
     duracaoMaximaMinutos: String(c.duracaoMaximaMinutos),
     antecedenciaMaximaDias: String(c.antecedenciaMaximaDias),
     intervaloEntreReunioesMinutos: String(c.intervaloEntreReunioesMinutos),
+    desativarAposDiasSemLogin:
+      c.desativarAposDiasSemLogin === null ? '' : String(c.desativarAposDiasSemLogin),
   };
 }
 
 const numero = (v: string) => (v.trim() === '' ? Number.NaN : Number(v));
+/** Campo opcional: em branco = desligado (null). */
+const numeroOuNulo = (v: string) => (v.trim() === '' ? null : Number(v));
 
 function FormConfiguracoes({ atual }: { atual: Configuracoes }) {
   const salvar = useAtualizarConfiguracoes();
@@ -73,6 +77,7 @@ function FormConfiguracoes({ atual }: { atual: Configuracoes }) {
       duracaoMaximaMinutos: numero(v.duracaoMaximaMinutos),
       antecedenciaMaximaDias: numero(v.antecedenciaMaximaDias),
       intervaloEntreReunioesMinutos: numero(v.intervaloEntreReunioesMinutos),
+      desativarAposDiasSemLogin: numeroOuNulo(v.desativarAposDiasSemLogin),
     };
     // Envia só o que mudou.
     const mudancas: AtualizarConfiguracoesInput = {};
@@ -202,6 +207,26 @@ function FormConfiguracoes({ atual }: { atual: Configuracoes }) {
               min={0}
               value={v.intervaloEntreReunioesMinutos}
               onChange={(ev) => alterar({ intervaloEntreReunioesMinutos: ev.target.value })}
+            />
+          </Field>
+        </div>
+      </Panel>
+
+      <Panel title="Acesso">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="Desativar contas sem login há (dias)"
+            hint="Colaboradores que não entram no sistema por esse tempo são desativados automaticamente; quem saiu da empresa perde o acesso. Administradores não são afetados. Em branco = desligado."
+            error={e.desativarAposDiasSemLogin}
+          >
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={15}
+              max={365}
+              placeholder="Desligado"
+              value={v.desativarAposDiasSemLogin}
+              onChange={(ev) => alterar({ desativarAposDiasSemLogin: ev.target.value })}
             />
           </Field>
         </div>

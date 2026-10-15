@@ -339,6 +339,48 @@ $sql_0002$;
 end
 $migracao$;
 
+-- ---------------------------------------------------------------------
+-- 0003_desativacao_por_inatividade.sql
+-- ---------------------------------------------------------------------
+do $migracao$
+declare
+  aplicado text;
+begin
+  select checksum into aplicado from reserva.migracoes where nome = '0003_desativacao_por_inatividade.sql';
+  if aplicado is not null then
+    if aplicado <> '8daccfcf636c7783299601dd97a32757b87c749e345dae70f2ff5627c0d7c8c2' then
+      raise exception 'A migração 0003_desativacao_por_inatividade.sql foi alterada depois de aplicada.';
+    end if;
+    raise notice 'já aplicada: 0003_desativacao_por_inatividade.sql';
+    return;
+  end if;
+
+  execute $sql_0003$
+-- =====================================================================
+-- 0003 — Desativação automática de contas sem uso
+--   * Colaborador que não entra no sistema há N dias é desativado sozinho
+--     (quem saiu da empresa perde o acesso mesmo que ninguém se lembre de desativá-lo).
+--   * null = desligado. Administradores nunca são desativados por este motivo.
+-- =====================================================================
+
+alter table reserva.configuracoes
+  add column desativar_apos_dias_sem_login integer default 60,
+  add constraint configuracoes_desativacao_inatividade check (
+    desativar_apos_dias_sem_login is null or desativar_apos_dias_sem_login between 15 and 365
+  );
+
+-- Quando a conta passou a valer: criação ou reativação. A contagem dos dias sem uso parte
+-- do mais recente entre este instante e o último login. Contas existentes começam a contar
+-- agora (ninguém é desativado no dia em que esta migração é aplicada).
+alter table reserva.usuarios
+  add column ativado_em timestamptz not null default now();
+$sql_0003$;
+
+  insert into reserva.migracoes (nome, checksum) values ('0003_desativacao_por_inatividade.sql', '8daccfcf636c7783299601dd97a32757b87c749e345dae70f2ff5627c0d7c8c2');
+  raise notice 'aplicada: 0003_desativacao_por_inatividade.sql';
+end
+$migracao$;
+
 commit;
 
 -- Conferência: deve listar todas as migrações.

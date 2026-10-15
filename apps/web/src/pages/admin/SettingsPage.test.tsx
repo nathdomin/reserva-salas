@@ -48,6 +48,26 @@ describe('configurações', () => {
     });
   });
 
+  it('desativação por falta de uso: em branco desliga (envia null)', async () => {
+    const fetchMock = mockApi({
+      ...logadoComo(ADMIN),
+      [PATCH]: { body: { configuracoes: { ...CONFIG, desativarAposDiasSemLogin: null } } },
+    });
+    const salvar = await abrir();
+    const campo = screen.getByLabelText('Desativar contas sem login há (dias)') as HTMLInputElement;
+    expect(campo.value).toBe('60');
+
+    fireEvent.change(campo, { target: { value: '10' } });
+    fireEvent.click(salvar);
+    expect(await screen.findByText('O valor mínimo é 15.')).toBeTruthy();
+    expect(corpoEnviado(fetchMock, PATCH)).toBeUndefined();
+
+    fireEvent.change(campo, { target: { value: '' } });
+    fireEvent.click(salvar);
+    expect(await screen.findByText(/Configurações salvas/)).toBeTruthy();
+    expect(corpoEnviado(fetchMock, PATCH)).toEqual({ desativarAposDiasSemLogin: null });
+  });
+
   it('valida antes de enviar', async () => {
     const fetchMock = mockApi(logadoComo(ADMIN));
     const salvar = await abrir();

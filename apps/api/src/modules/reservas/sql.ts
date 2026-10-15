@@ -3,7 +3,8 @@ export const BUSCAR_CONFIGURACOES = `
          to_char(horario_inicio, 'HH24:MI') as horario_inicio,
          to_char(horario_fim, 'HH24:MI') as horario_fim,
          granularidade_minutos, duracao_minima_minutos, duracao_maxima_minutos,
-         antecedencia_maxima_dias, intervalo_entre_reunioes_minutos
+         antecedencia_maxima_dias, intervalo_entre_reunioes_minutos,
+         desativar_apos_dias_sem_login
     from reserva.configuracoes
    where id`;
 

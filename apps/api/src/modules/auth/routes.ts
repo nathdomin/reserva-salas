@@ -9,6 +9,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import type { Database } from '../../db/client';
 import { AppError } from '../../plugins/errors';
 import { registrarAuditoria } from '../audit/service';
+import { desativarContasSemUso } from '../users/service';
 import type { AuthGuards } from './guards';
 import { usuarioAtual } from './guards';
 import { createBloqueioSimulado } from './bloqueio-simulado';
@@ -42,6 +43,7 @@ type UsuarioLoginRow = {
   ativo: boolean;
   senha_hash: string;
   bloqueado: boolean;
+  sem_uso: boolean;
 };
 
 const credenciaisInvalidas = () =>
@@ -108,8 +110,13 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
       throw credenciaisInvalidas();
     }
 
+    // Passou do prazo sem login: desativa agora, sem esperar a rotina periódica.
+    if (usuario.ativo && usuario.sem_uso) {
+      await desativarContasSemUso(database);
+    }
+
     // Só informa que o usuário está desativado para quem acertou a senha.
-    if (!usuario.ativo) {
+    if (!usuario.ativo || usuario.sem_uso) {
       throw new AppError(
         403,
         ERROR_CODES.USUARIO_INATIVO,

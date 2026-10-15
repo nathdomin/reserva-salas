@@ -20,6 +20,7 @@ import {
   CONTAR_ADMINS_ATIVOS,
   CONTAR_OUTROS_ADMINS_ATIVOS,
   CRIAR_USUARIO,
+  DESATIVAR_SEM_USO,
   LISTAR_USUARIOS,
   PROMOVER_E_REDEFINIR,
   REDEFINIR_SENHA,
@@ -270,6 +271,38 @@ export function createUsersService(database: Database) {
 }
 
 export type UsersService = ReturnType<typeof createUsersService>;
+
+/**
+ * Desativa os colaboradores que não entram no sistema há mais tempo que o configurado
+ * (quem saiu da empresa perde o acesso). Roda periodicamente e no login. As reservas futuras
+ * dessas pessoas são mantidas. Devolve quantas contas foram desativadas.
+ */
+export async function desativarContasSemUso(database: Database): Promise<number> {
+  return database.transaction(async (tx) => {
+    const { rows } = await tx.query<{
+      id: string;
+      nome: string;
+      ultimo_acesso: Date;
+      dias: number;
+    }>(DESATIVAR_SEM_USO);
+    for (const usuario of rows) {
+      await revogarSessoes(tx, usuario.id);
+      await registrarAuditoria(tx, {
+        atorId: null,
+        acao: 'USUARIO_DESATIVADO_INATIVIDADE',
+        entidade: 'usuario',
+        entidadeId: usuario.id,
+        antes: { ativo: true },
+        depois: {
+          ativo: false,
+          ultimoAcesso: usuario.ultimo_acesso.toISOString(),
+          diasSemLogin: usuario.dias,
+        },
+      });
+    }
+    return rows.length;
+  });
+}
 
 export class AdministradorJaExisteError extends Error {
   constructor() {

@@ -12,6 +12,7 @@ const config: Configuracoes = {
   duracaoMaximaMinutos: 480,
   antecedenciaMaximaDias: 120,
   intervaloEntreReunioesMinutos: 0,
+  desativarAposDiasSemLogin: 60,
 };
 
 // "Agora" fixo: sexta, 09/10/2026, 10:07 em Brasília (13:07 UTC).

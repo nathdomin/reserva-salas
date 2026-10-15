@@ -3,12 +3,21 @@
  * é concatenado no SQL (proteção contra SQL injection).
  */
 
-/** Dados necessários para o login. `bloqueado` é calculado com o relógio do banco. */
+/**
+ * Dados necessários para o login. `bloqueado` é calculado com o relógio do banco.
+ * `sem_uso`: colaborador que já passou do prazo sem login e ainda não foi desativado pela
+ * rotina periódica (ex.: servidor desligado nesse meio-tempo). Mesma regra de DESATIVAR_SEM_USO.
+ */
 export const BUSCAR_USUARIO_LOGIN = `
-  select id, nome, email, perfil, ativo, senha_hash,
-         (bloqueado_ate is not null and bloqueado_ate > now()) as bloqueado
-    from reserva.usuarios
-   where email = $1`;
+  select u.id, u.nome, u.email, u.perfil, u.ativo, u.senha_hash,
+         (u.bloqueado_ate is not null and u.bloqueado_ate > now()) as bloqueado,
+         coalesce(u.perfil <> 'ADMIN'
+                  and greatest(u.ativado_em, u.ultimo_login_em)
+                      < now() - make_interval(days => c.desativar_apos_dias_sem_login),
+                  false) as sem_uso
+    from reserva.usuarios u
+    left join reserva.configuracoes c on c.id
+   where u.email = $1`;
 
 /**
  * Registra uma senha errada. Na N-ésima falha seguida ($2), bloqueia por $3 minutos

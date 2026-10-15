@@ -80,19 +80,20 @@ servidor valida no fuso **America/Sao_Paulo**.
 
 ### `usuarios`
 
-| Coluna                       | Tipo        | Observação                                                         |
-| ---------------------------- | ----------- | ------------------------------------------------------------------ |
-| `id`                         | uuid        | Gerado pelo banco.                                                 |
-| `nome`                       | text        | 2 a 120 caracteres.                                                |
-| `email`                      | text        | Único, sempre em minúsculas, formato validado.                     |
-| `senha_hash`                 | text        | Hash **scrypt** com sal. A senha nunca é gravada.                  |
-| `perfil`                     | enum        | `COLABORADOR` (padrão) ou `ADMIN`.                                 |
-| `ativo`                      | boolean     | Usuário desativado não entra no sistema; o histórico é preservado. |
-| `tentativas_falhas`          | int         | Zerado no login certo. 5 falhas → bloqueio.                        |
-| `bloqueado_ate`              | timestamptz | Fim do bloqueio de 15 minutos.                                     |
-| `ultimo_login_em`            | timestamptz |                                                                    |
-| `senha_alterada_em`          | timestamptz | Trocar a senha encerra as outras sessões.                          |
-| `criado_em`, `atualizado_em` | timestamptz | `atualizado_em` é atualizado por trigger.                          |
+| Coluna                       | Tipo        | Observação                                                                  |
+| ---------------------------- | ----------- | --------------------------------------------------------------------------- |
+| `id`                         | uuid        | Gerado pelo banco.                                                          |
+| `nome`                       | text        | 2 a 120 caracteres.                                                         |
+| `email`                      | text        | Único, sempre em minúsculas, formato validado.                              |
+| `senha_hash`                 | text        | Hash **scrypt** com sal. A senha nunca é gravada.                           |
+| `perfil`                     | enum        | `COLABORADOR` (padrão) ou `ADMIN`.                                          |
+| `ativo`                      | boolean     | Usuário desativado não entra no sistema; o histórico é preservado.          |
+| `tentativas_falhas`          | int         | Zerado no login certo. 5 falhas → bloqueio.                                 |
+| `bloqueado_ate`              | timestamptz | Fim do bloqueio de 15 minutos.                                              |
+| `ultimo_login_em`            | timestamptz |                                                                             |
+| `ativado_em`                 | timestamptz | Criação ou última reativação. Com `ultimo_login_em`, conta os dias sem uso. |
+| `senha_alterada_em`          | timestamptz | Trocar a senha encerra as outras sessões.                                   |
+| `criado_em`, `atualizado_em` | timestamptz | `atualizado_em` é atualizado por trigger.                                   |
 
 ### `sessoes`
 
@@ -143,15 +144,21 @@ dizem o que mudou; `antes` e `depois` guardam os valores (nunca senhas nem hashe
 
 Uma única linha (`id = true`), alterada em **Administração → Configurações**.
 
-| Coluna                             | Padrão        | Limites              |
-| ---------------------------------- | ------------- | -------------------- |
-| `horario_inicio` / `horario_fim`   | 07:00 / 20:00 | fim depois do início |
-| `granularidade_minutos`            | 15            | 5, 10, 15, 30 ou 60  |
-| `duracao_minima_minutos`           | 15            | ≥ 5                  |
-| `duracao_maxima_minutos`           | 480           | ≥ mínima e ≤ 1440    |
-| `antecedencia_maxima_dias`         | 120           | 1 a 730              |
-| `intervalo_entre_reunioes_minutos` | 0             | 0 a 60               |
-| `motivo_visivel_para_todos`        | sim           |                      |
+| Coluna                             | Padrão        | Limites                        |
+| ---------------------------------- | ------------- | ------------------------------ |
+| `horario_inicio` / `horario_fim`   | 07:00 / 20:00 | fim depois do início           |
+| `granularidade_minutos`            | 15            | 5, 10, 15, 30 ou 60            |
+| `duracao_minima_minutos`           | 15            | ≥ 5                            |
+| `duracao_maxima_minutos`           | 480           | ≥ mínima e ≤ 1440              |
+| `antecedencia_maxima_dias`         | 120           | 1 a 730                        |
+| `intervalo_entre_reunioes_minutos` | 0             | 0 a 60                         |
+| `motivo_visivel_para_todos`        | sim           |                                |
+| `desativar_apos_dias_sem_login`    | 60            | 15 a 365, ou vazio (desligado) |
+
+Com `desativar_apos_dias_sem_login`, o servidor desativa (de hora em hora e no login) os
+**colaboradores** que não entram há mais dias que o configurado. Administradores nunca são
+desativados por este motivo. As sessões são encerradas, as reservas futuras são mantidas e o
+histórico registra **Usuário desativado por falta de uso**. Reativar a pessoa recomeça a contagem.
 
 ### `migracoes`
 
@@ -201,7 +208,8 @@ apagar tabelas, apagar reservas ou usuários, alterar o histórico nem desligar 
 2. Gere uma senha forte, **só com letras e números**, com 24 caracteres ou mais (ex.: no
    gerenciador de senhas). Guarde-a.
 3. Supabase → **SQL Editor → New query** → cole o conteúdo de `database/papel-aplicacao.sql`.
-4. Na linha `senha text := 'TROQUE-ESTA-SENHA';`, troque pelo valor gerado. **Run**.
+4. **No SQL Editor** (nunca no arquivo do projeto, que vai para o GitHub), na linha
+   `senha text := 'TROQUE-ESTA-SENHA';`, troque pelo valor gerado. **Run**.
    O resultado lista as permissões de cada tabela. Não salve a consulta com a senha no Supabase
    (feche a aba sem salvar).
 5. No `.env` do servidor:

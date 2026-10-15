@@ -60,6 +60,12 @@ describe('calendário', () => {
     expect(await screen.findByText('1 reserva neste período.')).toBeTruthy();
     temTitulo('30 de novembro a 6 de dezembro de 2026');
 
+    // A Agenda (lista) é opcional no computador: aparece no seletor, mas não abre por padrão.
+    const visoes = screen.getByRole('group', { name: 'Visualização' });
+    const agenda = within(visoes).getByRole('button', { name: 'Agenda' });
+    expect(agenda.getAttribute('aria-pressed')).toBe('false');
+    expect(agenda.className).not.toMatch(/hidden/);
+
     // Uma sala por vez: a primeira já vem escolhida e a reserva da outra sala não aparece.
     const abas = screen.getByRole('group', { name: 'Sala' });
     expect(

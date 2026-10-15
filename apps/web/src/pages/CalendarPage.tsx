@@ -107,8 +107,9 @@ export function CalendarPage() {
       />
 
       {/* Controles */}
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Sem espaço numa linha, o grupo da direita desce inteiro (o título nunca é espremido). */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
           <Button variant="secondary" size="sm" onClick={() => ir({ data: hoje })}>
             Hoje
           </Button>
@@ -132,7 +133,7 @@ export function CalendarPage() {
           </div>
           {/* No celular o título vem primeiro, numa linha só dele. */}
           <h2
-            className="order-first w-full text-lg font-semibold sm:order-none sm:w-auto"
+            className="order-first w-full text-lg font-semibold sm:order-none sm:w-auto sm:whitespace-nowrap"
             aria-live="polite"
           >
             {tituloDoPeriodo(visao, data)}
@@ -154,7 +155,6 @@ export function CalendarPage() {
                 className={cn(
                   'h-8 rounded px-3 text-sm font-semibold pointer-coarse:h-10',
                   visao === v.valor ? 'bg-ink text-paper' : 'text-ink hover:bg-ink/5',
-                  v.tela === 'celular' && 'sm:hidden',
                   v.tela === 'grande' && 'hidden sm:block',
                 )}
               >

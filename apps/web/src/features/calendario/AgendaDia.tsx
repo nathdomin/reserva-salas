@@ -120,7 +120,7 @@ export function AgendaDia({
                     dia === hoje ? ', hoje' : ''
                   }: ${qtd === 0 ? 'sem reservas' : `${qtd} reserva${qtd > 1 ? 's' : ''}`}`}
                   className={cn(
-                    'flex h-16 flex-col items-center justify-center gap-0.5 rounded-md border text-sm',
+                    'flex h-16 flex-col items-center justify-center gap-0.5 rounded-md border text-sm sm:h-18',
                     selecionado
                       ? 'border-ink bg-ink text-paper'
                       : 'border-line bg-paper hover:border-ink/40',
@@ -130,7 +130,7 @@ export function AgendaDia({
                   <span className="text-xs">{nomeCurtoDoDia(dia).replace('.', '')}</span>
                   <span
                     className={cn(
-                      'text-base leading-none font-semibold',
+                      'text-base leading-none font-semibold sm:text-lg',
                       dia === hoje && !selecionado && 'text-brand-strong',
                     )}
                   >
@@ -157,37 +157,40 @@ export function AgendaDia({
         </p>
       )}
 
-      {lista.map((sala) => (
-        <section
-          key={sala.id}
-          aria-labelledby={`agenda-${sala.id}`}
-          className="rounded-lg border border-line bg-paper"
-        >
-          <header className="border-b border-line px-4 py-3">
-            <h3 id={`agenda-${sala.id}`} className="font-semibold">
-              {sala.nome}
-            </h3>
-            <p className="text-sm text-muted">{sala.detalhe}</p>
-          </header>
-          {sala.trechos.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-muted">
-              {data < hoje ? 'Nenhuma reserva neste dia.' : 'Sem horários livres neste dia.'}
-            </p>
-          ) : (
-            <ul className="divide-y divide-line">
-              {sala.trechos.map((t) => (
-                <li key={t.tipo === 'livre' ? `livre-${t.inicio}` : t.item.id}>
-                  {t.tipo === 'livre' ? (
-                    <TrechoLivre data={data} sala={sala} inicio={t.inicio} fim={t.fim} />
-                  ) : (
-                    <TrechoOcupado reserva={t.item} minha={t.item.responsavel.id === usuarioId} />
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ))}
+      {/* Uma coluna no celular; em telas maiores, os cartões das salas lado a lado. */}
+      <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {lista.map((sala) => (
+          <section
+            key={sala.id}
+            aria-labelledby={`agenda-${sala.id}`}
+            className="overflow-hidden rounded-lg border border-line bg-paper"
+          >
+            <header className="border-b border-line px-4 py-3">
+              <h3 id={`agenda-${sala.id}`} className="font-semibold">
+                {sala.nome}
+              </h3>
+              <p className="text-sm text-muted">{sala.detalhe}</p>
+            </header>
+            {sala.trechos.length === 0 ? (
+              <p className="px-4 py-3 text-sm text-muted">
+                {data < hoje ? 'Nenhuma reserva neste dia.' : 'Sem horários livres neste dia.'}
+              </p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {sala.trechos.map((t) => (
+                  <li key={t.tipo === 'livre' ? `livre-${t.inicio}` : t.item.id}>
+                    {t.tipo === 'livre' ? (
+                      <TrechoLivre data={data} sala={sala} inicio={t.inicio} fim={t.fim} />
+                    ) : (
+                      <TrechoOcupado reserva={t.item} minha={t.item.responsavel.id === usuarioId} />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

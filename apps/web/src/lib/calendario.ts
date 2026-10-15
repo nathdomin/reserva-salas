@@ -7,9 +7,9 @@ import { APP_LOCALE, emMinutos, partesNoFuso, somarDias } from '@reserva/shared'
 
 export type Visao = 'agenda' | 'mes' | 'semana' | 'dia';
 
-/** A Agenda é a visão do celular; Semana e Dia (grade) ficam para telas maiores. */
-export const VISOES: { valor: Visao; rotulo: string; tela: 'celular' | 'todas' | 'grande' }[] = [
-  { valor: 'agenda', rotulo: 'Agenda', tela: 'celular' },
+/** A Agenda (lista) vale para todas as telas; Semana e Dia (grade) ficam para telas maiores. */
+export const VISOES: { valor: Visao; rotulo: string; tela: 'todas' | 'grande' }[] = [
+  { valor: 'agenda', rotulo: 'Agenda', tela: 'todas' },
   { valor: 'mes', rotulo: 'Mês', tela: 'todas' },
   { valor: 'semana', rotulo: 'Semana', tela: 'grande' },
   { valor: 'dia', rotulo: 'Dia', tela: 'grande' },

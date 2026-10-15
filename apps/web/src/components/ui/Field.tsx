@@ -15,7 +15,7 @@ import { cn } from '../../lib/cn';
  * Borda ink/45: contraste mínimo de 3:1 com o fundo branco para o campo ser percebido.
  */
 const controlBase =
-  'block h-10 w-full rounded-md border bg-paper px-3 text-base text-ink placeholder:text-muted sm:text-[15px] ' +
+  'block h-10 w-full rounded-md border bg-paper px-3 text-base text-ink placeholder:text-muted sm:text-md ' +
   'transition-colors focus:border-ink disabled:bg-canvas disabled:text-muted';
 
 export function Input({
@@ -57,7 +57,7 @@ export function Textarea({
   return (
     <textarea
       className={cn(
-        'block min-h-20 w-full rounded-md border bg-paper px-3 py-2 text-base text-ink sm:text-[15px]',
+        'block min-h-20 w-full rounded-md border bg-paper px-3 py-2 text-base text-ink sm:text-md',
         'placeholder:text-muted focus:border-ink',
         invalid ? 'border-brand' : 'border-ink/45',
         className,
@@ -86,7 +86,7 @@ export function Checkbox({
         {...props}
       />
       <div>
-        <label htmlFor={id} className="text-[15px] font-medium">
+        <label htmlFor={id} className="text-md font-medium">
           {label}
         </label>
         {hint && (

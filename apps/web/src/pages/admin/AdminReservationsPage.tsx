@@ -77,15 +77,24 @@ export function AdminReservationsPage() {
         <form
           aria-label="Filtros"
           onSubmit={(e) => e.preventDefault()}
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          // Datas lado a lado já no celular (a partir de 370px); sala e responsável em linha própria.
+          className="grid grid-cols-2 gap-x-3 gap-y-4 lg:grid-cols-4"
         >
-          <Field label="De" error={!dataValida(de) ? (erroPeriodo ?? undefined) : undefined}>
+          <Field
+            label="De"
+            className="col-span-2 min-[370px]:col-span-1"
+            error={!dataValida(de) ? (erroPeriodo ?? undefined) : undefined}
+          >
             <Input type="date" value={de} onChange={(e) => alterar({ de: e.target.value })} />
           </Field>
-          <Field label="Até" error={dataValida(de) ? (erroPeriodo ?? undefined) : undefined}>
+          <Field
+            label="Até"
+            className="col-span-2 min-[370px]:col-span-1"
+            error={dataValida(de) ? (erroPeriodo ?? undefined) : undefined}
+          >
             <Input type="date" value={ate} onChange={(e) => alterar({ ate: e.target.value })} />
           </Field>
-          <Field label="Sala">
+          <Field label="Sala" className="col-span-2 sm:col-span-1">
             <Select value={salaId} onChange={(e) => alterar({ sala: e.target.value })}>
               <option value="">Todas as salas</option>
               {(salas.data ?? []).map((s) => (
@@ -95,7 +104,7 @@ export function AdminReservationsPage() {
               ))}
             </Select>
           </Field>
-          <Field label="Responsável">
+          <Field label="Responsável" className="col-span-2 sm:col-span-1">
             <Select value={usuarioId} onChange={(e) => alterar({ pessoa: e.target.value })}>
               <option value="">Todas as pessoas</option>
               {(usuarios.data ?? []).map((u) => (
@@ -105,30 +114,35 @@ export function AdminReservationsPage() {
               ))}
             </Select>
           </Field>
-          <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-4">
+          <div className="col-span-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:col-span-4">
+            <div role="group" aria-label="Atalhos de período" className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => alterar({ de: hoje, ate: hoje })}
+              >
+                Hoje
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => alterar({ de: hoje, ate: somarDias(hoje, 30) })}
+              >
+                Próximos 30 dias
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => alterar({ de: somarDias(hoje, -30), ate: hoje })}
+              >
+                Últimos 30 dias
+              </Button>
+            </div>
             <Checkbox
               label="Incluir canceladas"
               checked={incluirCanceladas}
               onChange={(e) => alterar({ canceladas: e.target.checked ? '1' : '' })}
             />
-            <span className="mx-2 hidden h-5 border-l border-line sm:block" aria-hidden />
-            <Button variant="ghost" size="sm" onClick={() => alterar({ de: hoje, ate: hoje })}>
-              Hoje
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => alterar({ de: hoje, ate: somarDias(hoje, 30) })}
-            >
-              Próximos 30 dias
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => alterar({ de: somarDias(hoje, -30), ate: hoje })}
-            >
-              Últimos 30 dias
-            </Button>
           </div>
         </form>
       </Panel>

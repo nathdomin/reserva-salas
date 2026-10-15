@@ -19,6 +19,12 @@
   --color-muted: #575757;
   --color-ok: #17803d;
 
+  /* Escala de texto própria: corpo de 15px (entre text-sm e text-base) e título de página. */
+  --text-md: 0.9375rem;
+  --text-md--line-height: 1.5;
+  --text-title: 1.75rem;
+  --text-title--line-height: 1.25;
+
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
 }
 

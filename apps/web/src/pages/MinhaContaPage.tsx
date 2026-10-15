@@ -50,7 +50,7 @@ export function MinhaContaPage() {
 
       <div className="grid gap-6 lg:grid-cols-[340px_1fr] lg:items-start">
         <Panel title="Dados">
-          <dl className="flex flex-col gap-3 text-[15px]">
+          <dl className="flex flex-col gap-3 text-md">
             <div>
               <dt className="text-sm text-muted">Nome</dt>
               <dd className="font-medium">{usuario.nome}</dd>

@@ -277,7 +277,7 @@ export function ReservaForm(props: ReservaFormProps) {
               value={v.motivo}
               maxLength={200}
               onChange={(e) => alterar({ motivo: e.target.value })}
-              placeholder="Ex.: Planejamento mensal da equipe financeira"
+              placeholder="Ex.: Planejamento mensal"
             />
           </Field>
 
@@ -298,7 +298,7 @@ export function ReservaForm(props: ReservaFormProps) {
 
           <div className="flex flex-col justify-end gap-1.5">
             <span className="text-sm font-medium">Responsável</span>
-            <p className="flex h-10 items-center rounded-md bg-canvas px-3 text-[15px]">
+            <p className="flex h-10 items-center rounded-md bg-canvas px-3 text-md">
               {props.responsavel}
             </p>
           </div>

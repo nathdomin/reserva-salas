@@ -47,7 +47,7 @@ export function LoginPage() {
 
         <div className="rounded-lg border border-line bg-paper p-6 sm:p-8">
           <h1 className="text-2xl font-semibold tracking-tight">Entrar</h1>
-          <p className="mt-1 text-[15px] text-muted">Use seu e-mail corporativo e sua senha.</p>
+          <p className="mt-1 text-md text-muted">Use seu e-mail corporativo e sua senha.</p>
 
           {sessao.isPending && <Spinner className="mt-6" label="Verificando sessão" />}
 

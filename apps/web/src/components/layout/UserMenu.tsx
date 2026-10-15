@@ -27,7 +27,7 @@ export function UserMenu({
   return (
     <div className="border-t border-line pt-4">
       <div className="px-3">
-        <p className="truncate text-[15px] font-semibold" title={usuario.nome}>
+        <p className="truncate text-md font-semibold" title={usuario.nome}>
           {usuario.nome}
         </p>
         <p className="truncate text-xs text-muted" title={usuario.email}>

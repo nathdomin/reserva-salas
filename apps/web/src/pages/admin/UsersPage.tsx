@@ -127,7 +127,7 @@ export function UsersPage() {
 
       {decisao && (
         <Panel title={`Desativar ${decisao.usuario.nome}`} className="mb-6">
-          <p className="text-[15px]">
+          <p className="text-md">
             {decisao.usuario.nome} tem <strong>{decisao.total} reserva(s) futura(s)</strong>. O que
             fazer com elas?
           </p>
@@ -234,8 +234,10 @@ export function UsersPage() {
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold">{u.nome}</span>
-                      {ehVoce && <span className="text-sm text-muted">(você)</span>}
+                      <span className="font-semibold">
+                        {u.nome}
+                        {ehVoce && <span className="text-sm font-normal text-muted"> (você)</span>}
+                      </span>
                       <Badge tone={u.perfil === 'ADMIN' ? 'strong' : 'neutral'}>
                         {PERFIL_LABEL[u.perfil]}
                       </Badge>
@@ -287,7 +289,7 @@ export function UsersPage() {
                       {!ehVoce && u.ativo && (
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="danger"
                           onClick={() => {
                             setConfirmando(u.id);
                             setAviso(null);

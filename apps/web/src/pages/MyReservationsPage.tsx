@@ -44,6 +44,7 @@ export function MyReservationsPage() {
       <PageHeader
         title="Minhas reservas"
         description="Suas próximas reuniões e o histórico das anteriores."
+        actionsOnlyOnDesktop
         actions={
           <ButtonLink to="/reservas/nova">
             <Plus aria-hidden className="size-4" strokeWidth={2.5} />
@@ -63,7 +64,7 @@ export function MyReservationsPage() {
             aria-controls="painel-reservas"
             onClick={() => trocarAba(a.valor)}
             className={cn(
-              '-mb-px border-b-2 px-3 py-2 text-[15px] font-semibold',
+              '-mb-px border-b-2 px-3 py-2 text-md font-semibold',
               aba === a.valor
                 ? 'border-brand text-ink'
                 : 'border-transparent text-muted hover:text-ink',

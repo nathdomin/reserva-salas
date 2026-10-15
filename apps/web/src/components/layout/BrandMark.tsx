@@ -13,7 +13,7 @@ export function BrandMark() {
         className="h-9 w-auto shrink-0"
       />
       <span className="leading-tight">
-        <span className="block text-[15px] font-semibold">MeetKof</span>
+        <span className="block text-md font-semibold">MeetKof</span>
         <span className="block text-xs text-muted">Setor administrativo</span>
       </span>
     </span>

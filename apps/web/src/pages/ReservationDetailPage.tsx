@@ -20,7 +20,7 @@ function Info({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   return (
     <div>
       <dt className="text-sm text-muted">{rotulo}</dt>
-      <dd className="text-[15px] font-medium">{children}</dd>
+      <dd className="text-md font-medium">{children}</dd>
     </div>
   );
 }
@@ -80,7 +80,7 @@ export function ReservationDetailPage() {
 
           <Panel>
             <div className="mb-4 flex flex-wrap gap-2">
-              <Badge tone={r.status === 'ATIVA' ? 'strong' : 'muted'}>
+              <Badge tone={r.status === 'ATIVA' ? 'neutral' : 'muted'}>
                 {STATUS_RESERVA_LABEL[r.status]}
               </Badge>
               {r.diaInteiro && <Badge>Dia inteiro</Badge>}
@@ -106,7 +106,7 @@ export function ReservationDetailPage() {
 
             {r.podeCancelar && !confirmando && (
               <div className="mt-6 border-t border-line pt-4">
-                <Button variant="ghost" onClick={() => setConfirmando(true)}>
+                <Button variant="danger" onClick={() => setConfirmando(true)}>
                   Cancelar reserva
                 </Button>
               </div>

@@ -68,17 +68,20 @@ function Mudancas({ registro }: { registro: RegistroAuditoria }) {
 
   return (
     <table className="mt-2 w-full max-w-2xl table-fixed text-sm">
-      <thead className="sr-only">
+      <thead className="text-left text-xs font-medium text-muted">
         <tr>
-          <th>Campo</th>
-          {temAntes && <th>Antes</th>}
-          <th>{temAntes ? 'Depois' : 'Valor'}</th>
+          {/* Tabela de largura fixa: a 1ª linha define as colunas, então esta célula fica no fluxo. */}
+          <th className="w-28 sm:w-48">
+            <span className="sr-only">Campo</span>
+          </th>
+          {temAntes && <th className="pr-3 pb-0.5 font-medium">Antes</th>}
+          <th className="pb-0.5 font-medium">{temAntes ? 'Depois' : 'Valor'}</th>
         </tr>
       </thead>
       <tbody>
         {campos.map((campo) => (
           <tr key={campo} className="align-top">
-            <td className="w-48 py-0.5 pr-3 text-muted">{CAMPOS[campo] ?? campo}</td>
+            <td className="w-28 py-0.5 pr-3 text-muted sm:w-48">{CAMPOS[campo] ?? campo}</td>
             {temAntes && (
               <td className="py-0.5 pr-3 break-words text-muted line-through decoration-muted/50">
                 {formatarValor(antes[campo])}

@@ -18,8 +18,8 @@ function StatusRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-4 py-2.5">
-      <dt className="text-[15px]">{label}</dt>
-      <dd className="flex items-center gap-2 text-[15px] font-medium">
+      <dt className="text-md">{label}</dt>
+      <dd className="flex items-center gap-2 text-md font-medium">
         <span aria-hidden className={cn('size-2 rounded-full', ok ? 'bg-ok' : 'bg-brand')} />
         {ok ? okText : failText}
       </dd>

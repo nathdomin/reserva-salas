@@ -97,7 +97,7 @@ export function RoomsPage() {
 
       {decisao && (
         <Panel title={`Desativar ${decisao.sala.nome}`} className="mb-6">
-          <p className="text-[15px]">
+          <p className="text-md">
             Esta sala tem <strong>{decisao.total} reserva(s) futura(s)</strong>. O que fazer com
             elas?
           </p>
@@ -211,7 +211,7 @@ export function RoomsPage() {
                     {s.ativo ? (
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="danger"
                         onClick={() => {
                           limparMensagens();
                           setConfirmando(s.id);

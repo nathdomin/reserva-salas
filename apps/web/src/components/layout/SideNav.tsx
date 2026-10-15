@@ -32,7 +32,7 @@ export function SideNav({ perfil, onNavigate }: { perfil: Perfil; onNavigate?: (
                   onClick={onNavigate}
                   className={({ isActive }) =>
                     cn(
-                      'relative flex h-10 items-center gap-3 rounded-md px-3 text-[15px] transition-colors',
+                      'relative flex h-10 items-center gap-3 rounded-md px-3 text-md transition-colors',
                       isActive
                         ? 'bg-brand-soft font-semibold text-ink before:absolute before:inset-y-1.5 before:left-0 before:w-1 before:rounded-full before:bg-brand'
                         : 'text-ink/75 hover:bg-canvas hover:text-ink',

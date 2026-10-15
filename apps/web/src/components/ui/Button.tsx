@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { Link, type LinkProps } from 'react-router';
 import { cn } from '../../lib/cn';
 
-type Variant = 'primary' | 'secondary' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'md' | 'sm';
 
 const base =
@@ -13,10 +13,12 @@ const variants: Record<Variant, string> = {
   primary: 'bg-brand-strong text-paper hover:bg-brand-deep active:bg-brand-deep',
   secondary: 'border border-ink/15 bg-paper text-ink hover:border-ink/40',
   ghost: 'text-ink hover:bg-ink/5',
+  /** Primeiro passo de uma ação destrutiva (cancelar, desativar); a confirmação vem depois. */
+  danger: 'text-brand-strong hover:bg-brand-soft',
 };
 
 const sizes: Record<Size, string> = {
-  md: 'h-10 px-4 text-[15px]',
+  md: 'h-10 px-4 text-md',
   // Em telas de toque o botão pequeno sobe para 40px de altura (alvo confortável para o dedo).
   sm: 'h-8 px-3 text-sm pointer-coarse:h-10',
 };

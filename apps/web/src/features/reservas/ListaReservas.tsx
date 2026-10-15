@@ -79,10 +79,13 @@ export function ListaReservas({
                   )}
                 </p>
                 {mostrarResponsavel && <p className="text-sm">{r.responsavel.nome}</p>}
+                {/* Só a exceção (cancelada) ganha selo; ativa é o normal e fica discreta. */}
                 <div>
-                  <Badge tone={cancelada ? 'muted' : 'strong'}>
-                    {STATUS_RESERVA_LABEL[r.status]}
-                  </Badge>
+                  {cancelada ? (
+                    <Badge tone="muted">{STATUS_RESERVA_LABEL[r.status]}</Badge>
+                  ) : (
+                    <span className="text-sm text-muted">{STATUS_RESERVA_LABEL[r.status]}</span>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-1 xl:justify-end">
                   {r.podeEditar && (
@@ -97,7 +100,7 @@ export function ListaReservas({
                   )}
                   {r.podeCancelar && cancelando !== r.id && (
                     <Button
-                      variant="ghost"
+                      variant="danger"
                       size="sm"
                       aria-label={`Cancelar: ${r.motivo}, ${formatDiaCurto(r.inicio)}`}
                       onClick={() => setCancelando(r.id)}

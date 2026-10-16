@@ -9,7 +9,7 @@ import { isPgError, PG_ERROR, type Database, type Queryable } from '../../db/cli
 import { AppError } from '../../plugins/errors';
 import { registrarAuditoria } from '../audit/service';
 import { hashPassword } from '../auth/password';
-import { REMOVER_SESSOES_DO_USUARIO } from '../auth/sql';
+import { DESBLOQUEAR_USUARIO, REMOVER_SESSOES_DO_USUARIO } from '../auth/sql';
 import {
   ATUALIZAR_USUARIO,
   CANCELAR_RESERVAS_FUTURAS_DO_USUARIO,
@@ -239,6 +239,27 @@ export function createUsersService(database: Database) {
         if (isPgError(error, PG_ERROR.UNIQUE_VIOLATION, 'usuarios_email_unico')) throw emailEmUso();
         throw error;
       }
+    },
+
+    /** Libera uma conta bloqueada por senhas erradas, sem trocar a senha. */
+    async desbloquear(ator: Ator, id: string): Promise<UsuarioAdmin> {
+      return database.transaction(async (tx) => {
+        const { rows } = await tx.query<UsuarioRow>(BUSCAR_USUARIO_PARA_ALTERAR, [id]);
+        const usuario = rows[0];
+        if (!usuario) throw naoEncontrado();
+        if (!usuario.bloqueado) return toUsuarioAdmin(usuario);
+        await tx.query(DESBLOQUEAR_USUARIO, [id]);
+        await registrarAuditoria(tx, {
+          atorId: ator.id,
+          acao: 'CONTA_DESBLOQUEADA',
+          entidade: 'usuario',
+          entidadeId: id,
+          antes: { bloqueado: true },
+          depois: { bloqueado: false },
+          ip: ator.ip,
+        });
+        return toUsuarioAdmin({ ...usuario, bloqueado: false });
+      });
     },
 
     /** Define uma nova senha e encerra todas as sessões do usuário. */

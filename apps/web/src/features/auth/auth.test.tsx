@@ -46,6 +46,34 @@ describe('login e proteção de rotas', () => {
     });
   });
 
+  it('avisa depois do login se houve senhas erradas na conta, até a pessoa dispensar', async () => {
+    mockApi({
+      'GET /api/auth/me': SEM_SESSAO,
+      'POST /api/auth/login': { body: { usuario: COLABORADOR, tentativasSemSucesso: 3 } },
+      'GET /api/health': HEALTH_OK,
+    });
+    renderApp('/calendario');
+    await screen.findByRole('heading', { name: 'Entrar' });
+    preencherLogin('caio@empresa.com', 'minha-senha-123');
+
+    expect(await screen.findByText(/Houve 3 tentativas de entrar na sua conta/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Entendi' }));
+    await waitFor(() => expect(screen.queryByText(/Houve 3 tentativas/)).toBeNull());
+  });
+
+  it('sem senhas erradas desde o último acesso, não mostra aviso', async () => {
+    mockApi({
+      'GET /api/auth/me': SEM_SESSAO,
+      'POST /api/auth/login': { body: { usuario: COLABORADOR, tentativasSemSucesso: 0 } },
+      'GET /api/health': HEALTH_OK,
+    });
+    renderApp('/calendario');
+    await screen.findByRole('heading', { name: 'Entrar' });
+    preencherLogin('caio@empresa.com', 'minha-senha-123');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Calendário' })).toBeTruthy();
+    expect(screen.queryByText(/tentativa.* de entrar na sua conta/)).toBeNull();
+  });
+
   it('credenciais erradas mostram a mensagem da API e limpam a senha', async () => {
     mockApi({
       'GET /api/auth/me': SEM_SESSAO,

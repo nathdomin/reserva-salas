@@ -69,7 +69,51 @@ describe('autenticação', () => {
       expect(res.json().error.code).toBe('USUARIO_INATIVO');
     });
 
-    it('bloqueia por 15 minutos após 5 senhas erradas, mesmo que a 6ª esteja certa', async () => {
+    it('bloqueio progressivo: 1 minuto na 1ª série de erros, 2 na 2ª; o admin desbloqueia', async () => {
+      const usuario = await criarUsuarioTeste(ctx.database.pool);
+      const admin = await criarUsuarioTeste(ctx.database.pool, { perfil: 'ADMIN' });
+      const tokenAdmin = await login(ctx.app, admin);
+      const errar5 = async (rodada: string) => {
+        for (let i = 0; i < 5; i++) await postLogin(usuario.email, `errada-${rodada}-${i}-xx`);
+      };
+
+      await errar5('a');
+      let res = await postLogin(usuario.email, usuario.senha);
+      expect(res.statusCode).toBe(429);
+      expect(res.json().error.details).toEqual({ minutos: 1 });
+
+      // Simula o fim do 1º bloqueio; a 2ª série de erros bloqueia por 2 minutos.
+      await ctx.database.pool.query(
+        `update reserva.usuarios set bloqueado_ate = now() - interval '1 second' where id = $1`,
+        [usuario.id],
+      );
+      await errar5('b');
+      res = await postLogin(usuario.email, usuario.senha);
+      expect(res.json().error.details).toEqual({ minutos: 2 });
+
+      const desbloqueio = await ctx.app.inject({
+        method: 'POST',
+        url: `/api/admin/usuarios/${usuario.id}/desbloquear`,
+        ...comSessao(tokenAdmin),
+      });
+      expect(desbloqueio.statusCode).toBe(200);
+      expect(desbloqueio.json().usuario.bloqueado).toBe(false);
+
+      // Entra, e o login avisa as 10 senhas erradas desde o acesso anterior.
+      res = await postLogin(usuario.email, usuario.senha);
+      expect(res.statusCode).toBe(200);
+      expect(res.json().tentativasSemSucesso).toBe(10);
+      const { rows } = await ctx.database.pool.query(
+        `select bloqueios_seguidos from reserva.usuarios where id = $1`,
+        [usuario.id],
+      );
+      expect(rows[0].bloqueios_seguidos).toBe(0);
+
+      // No login seguinte, sem erros no meio, o aviso some.
+      expect((await postLogin(usuario.email, usuario.senha)).json().tentativasSemSucesso).toBe(0);
+    });
+
+    it('bloqueia após 5 senhas erradas, mesmo que a 6ª esteja certa', async () => {
       const usuario = await criarUsuarioTeste(ctx.database.pool);
       for (let i = 0; i < 5; i++) {
         expect((await postLogin(usuario.email, `errada-${i}-xxxx`)).statusCode).toBe(401);

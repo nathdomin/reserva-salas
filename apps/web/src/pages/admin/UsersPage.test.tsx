@@ -61,6 +61,29 @@ describe('Usuários (administrador)', () => {
     expect(within(listaEl).queryByText('Ana Admin')).toBeNull();
   });
 
+  it('Desbloquear aparece só para contas bloqueadas e chama a API', async () => {
+    const fetchMock = mockApi(
+      rotas({
+        [`POST /api/admin/usuarios/${COLABORADOR.id}/desbloquear`]: {
+          body: { usuario: usuarioAdmin(COLABORADOR, { bloqueado: false }) },
+        },
+      }),
+    );
+    const listaEl = await abrirPagina();
+    const minhaLinha = within(listaEl).getByText('Ana Admin').closest('li')!;
+    expect(within(minhaLinha).queryByRole('button', { name: 'Desbloquear' })).toBeNull();
+
+    const linhaCaio = within(listaEl).getByText('Caio Colaborador').closest('li')!;
+    fireEvent.click(within(linhaCaio).getByRole('button', { name: 'Desbloquear' }));
+    expect(await screen.findByText(/Caio Colaborador foi desbloqueado/)).toBeTruthy();
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) =>
+          url === `/api/admin/usuarios/${COLABORADOR.id}/desbloquear` && init?.method === 'POST',
+      ),
+    ).toBe(true);
+  });
+
   it('o próprio administrador não tem as opções de desativar nem redefinir senha', async () => {
     mockApi(rotas());
     const listaEl = await abrirPagina();

@@ -10,8 +10,8 @@ Para usar só dentro da rede da empresa, sem expor na internet, veja
 ## Antes de começar: o que muda na internet
 
 - **Qualquer pessoa consegue abrir a tela de login.** Só entra quem tem usuário cadastrado por um
-  administrador (não há cadastro público), e o sistema já tem: HTTPS, bloqueio de 15 minutos
-  após 5 senhas erradas, limite de tentativas por IP, proteção contra CSRF e senhas com hash.
+  administrador (não há cadastro público), e o sistema já tem: HTTPS, bloqueio progressivo
+  (1 a 15 minutos) após 5 senhas erradas, limite de tentativas por IP, proteção contra CSRF e senhas com hash.
   Mesmo assim: senhas fortes, poucos administradores e desativar no mesmo dia quem sair da
   empresa.
 - **Plano gratuito do Render:** o sistema "dorme" após 15 minutos sem acesso; o primeiro acesso

@@ -41,6 +41,11 @@ export const usersRoutes: FastifyPluginAsync<UsersRoutesOptions> = async (
     return users.atualizar(ator(request), id, dados);
   });
 
+  app.post('/:id/desbloquear', async (request) => {
+    const { id } = paramsSchema.parse(request.params);
+    return { usuario: await users.desbloquear(ator(request), id) };
+  });
+
   app.post('/:id/redefinir-senha', async (request, reply) => {
     const { id } = paramsSchema.parse(request.params);
     const { novaSenha } = redefinirSenhaSchema.parse(request.body ?? {});

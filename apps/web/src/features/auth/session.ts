@@ -1,4 +1,5 @@
 import {
+  loginResponseSchema,
   sessaoResponseSchema,
   type AlterarSenhaInput,
   type LoginInput,
@@ -35,6 +36,9 @@ export function useSessao() {
   });
 }
 
+/** Senhas erradas na conta desde o acesso anterior (mostrado uma vez, depois do login). */
+export const TENTATIVAS_KEY = ['tentativas-sem-sucesso'] as const;
+
 export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -43,13 +47,32 @@ export function useLogin() {
         method: 'POST',
         body: JSON.stringify(input),
       });
-      return sessaoResponseSchema.parse(data).usuario;
+      return loginResponseSchema.parse(data);
     },
-    onSuccess: (usuario) => {
+    onSuccess: ({ usuario, tentativasSemSucesso }) => {
       limparDadosDoUsuario(queryClient);
       queryClient.setQueryData(SESSAO_KEY, usuario);
+      if (tentativasSemSucesso > 0) {
+        queryClient.setQueryData(TENTATIVAS_KEY, tentativasSemSucesso);
+      }
     },
   });
+}
+
+/** Quantas tentativas avisar (0 = nenhuma) e como dispensar o aviso. */
+export function useAvisoTentativas() {
+  const queryClient = useQueryClient();
+  const { data } = useQuery({
+    queryKey: TENTATIVAS_KEY,
+    queryFn: () => 0,
+    enabled: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+  return {
+    total: data ?? 0,
+    dispensar: () => queryClient.setQueryData(TENTATIVAS_KEY, 0),
+  };
 }
 
 export function useLogout() {

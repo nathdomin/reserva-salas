@@ -54,6 +54,20 @@ export function useAtualizarUsuario() {
   });
 }
 
+export function useDesbloquearUsuario() {
+  const invalidar = useInvalidarUsuarios();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const data = await apiFetch<unknown>(
+        `/admin/usuarios/${encodeURIComponent(id)}/desbloquear`,
+        { method: 'POST' },
+      );
+      return usuarioResponseSchema.parse(data).usuario;
+    },
+    onSuccess: invalidar,
+  });
+}
+
 export function useRedefinirSenha() {
   const invalidar = useInvalidarUsuarios();
   return useMutation({

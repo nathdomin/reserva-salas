@@ -4,6 +4,7 @@ import { dataValida } from './tempo';
 export const ACOES_AUDITORIA = [
   'LOGIN_FALHO',
   'CONTA_BLOQUEADA',
+  'CONTA_DESBLOQUEADA',
   'SENHA_ALTERADA',
   'USUARIO_CRIADO',
   'USUARIO_ATUALIZADO',
@@ -27,6 +28,7 @@ export type AcaoAuditoria = (typeof ACOES_AUDITORIA)[number];
 export const ACAO_AUDITORIA_LABEL: Record<AcaoAuditoria, string> = {
   LOGIN_FALHO: 'Login sem sucesso',
   CONTA_BLOQUEADA: 'Conta bloqueada',
+  CONTA_DESBLOQUEADA: 'Conta desbloqueada',
   SENHA_ALTERADA: 'Senha alterada',
   USUARIO_CRIADO: 'Usuário criado',
   USUARIO_ATUALIZADO: 'Usuário alterado',

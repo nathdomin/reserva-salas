@@ -381,6 +381,42 @@ $sql_0003$;
 end
 $migracao$;
 
+-- ---------------------------------------------------------------------
+-- 0004_bloqueio_progressivo.sql
+-- ---------------------------------------------------------------------
+do $migracao$
+declare
+  aplicado text;
+begin
+  select checksum into aplicado from reserva.migracoes where nome = '0004_bloqueio_progressivo.sql';
+  if aplicado is not null then
+    if aplicado <> '853598ea9d2b1345185fcf1e0ee0942524bf7b2f7c94ad7bdf1e9d2b85906794' then
+      raise exception 'A migração 0004_bloqueio_progressivo.sql foi alterada depois de aplicada.';
+    end if;
+    raise notice 'já aplicada: 0004_bloqueio_progressivo.sql';
+    return;
+  end if;
+
+  execute $sql_0004$
+-- =====================================================================
+-- 0004 — Bloqueio progressivo de login
+--   A cada série de 5 senhas erradas, a conta fica bloqueada por um tempo que dobra:
+--   1, 2, 4, 8 e no máximo 15 minutos. Um login certo, a troca de senha ou o
+--   administrador (botão "Desbloquear") zeram a sequência.
+--   Assim, alguém que erra a senha de outra pessoa de propósito só a trava por pouco tempo,
+--   e a pessoa é avisada das tentativas no próximo login.
+-- =====================================================================
+
+alter table reserva.usuarios
+  add column bloqueios_seguidos integer not null default 0,
+  add constraint usuarios_bloqueios_validos check (bloqueios_seguidos >= 0);
+$sql_0004$;
+
+  insert into reserva.migracoes (nome, checksum) values ('0004_bloqueio_progressivo.sql', '853598ea9d2b1345185fcf1e0ee0942524bf7b2f7c94ad7bdf1e9d2b85906794');
+  raise notice 'aplicada: 0004_bloqueio_progressivo.sql';
+end
+$migracao$;
+
 commit;
 
 -- Conferência: deve listar todas as migrações.

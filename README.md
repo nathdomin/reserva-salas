@@ -140,8 +140,9 @@ Pastas criadas durante o uso e que **não** devem ser copiadas nem versionadas: 
 - Sessão em cookie `httpOnly` + `SameSite=Strict` (+ `Secure` em produção). O banco guarda só o
   hash do token. A sessão expira após 8 h sem uso e, em qualquer caso, 12 h após o login.
 - Desativar um usuário ou redefinir a senha dele encerra as sessões abertas na hora.
-- Login: mensagem genérica para e-mail/senha errados, bloqueio de 15 min após 5 erros seguidos e
-  limite de tentativas por IP.
+- Login: mensagem genérica para e-mail/senha errados, bloqueio progressivo (1, 2, 4, 8 e no
+  máximo 15 min) após 5 erros seguidos, aviso à pessoa das tentativas erradas no login seguinte,
+  botão **Desbloquear** para o administrador e limite de tentativas por IP.
 - Permissões verificadas na API em todas as rotas; o perfil é relido do banco a cada requisição.
 - Histórico de alterações (auditoria) somente de inserção: o banco impede alterar ou apagar.
 - Em produção, a API pode usar o usuário de banco `reserva_app`, que não consegue apagar tabelas,

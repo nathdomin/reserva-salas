@@ -1,6 +1,7 @@
 import { Menu, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
+import { AvisoTentativas } from '../../features/auth/AvisoTentativas';
 import { useSessao } from '../../features/auth/session';
 import { Avisos } from '../../features/avisos/Avisos';
 import { useMinhasReservas } from '../../features/reservas/api';
@@ -174,6 +175,7 @@ export function AppLayout() {
       <main id="conteudo" inert={menuOpen} className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
         {/* A cada página nova, o conteúdo entra com um fade curto. */}
         <div key={location.pathname} className="mx-auto max-w-6xl animate-entrar">
+          <AvisoTentativas />
           <Outlet />
         </div>
       </main>

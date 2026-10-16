@@ -95,6 +95,11 @@ export type UsuarioSessao = z.infer<typeof usuarioSessaoSchema>;
 
 export const sessaoResponseSchema = z.object({ usuario: usuarioSessaoSchema });
 
+/** Resposta do login: inclui as senhas erradas na conta desde o acesso anterior. */
+export const loginResponseSchema = sessaoResponseSchema.extend({
+  tentativasSemSucesso: z.number().int().min(0).default(0),
+});
+
 /** Usuário como aparece na gestão de usuários (somente administradores). */
 export const usuarioAdminSchema = usuarioSessaoSchema.extend({
   ativo: z.boolean(),

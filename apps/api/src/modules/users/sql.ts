@@ -42,14 +42,16 @@ export const ATUALIZAR_USUARIO = `
 
 export const REDEFINIR_SENHA = `
   update reserva.usuarios
-     set senha_hash = $2, senha_alterada_em = now(), tentativas_falhas = 0, bloqueado_ate = null
+     set senha_hash = $2, senha_alterada_em = now(), tentativas_falhas = 0,
+         bloqueios_seguidos = 0, bloqueado_ate = null
    where id = $1`;
 
 /** Usado pelo comando do terminal para recuperar o acesso de administrador. */
 export const PROMOVER_E_REDEFINIR = `
   update reserva.usuarios
      set nome = $2, perfil = 'ADMIN', ativo = true, senha_hash = $3,
-         senha_alterada_em = now(), tentativas_falhas = 0, bloqueado_ate = null,
+         senha_alterada_em = now(), tentativas_falhas = 0, bloqueios_seguidos = 0,
+         bloqueado_ate = null,
          ativado_em = case when ativo then ativado_em else now() end
    where id = $1
   returning ${CAMPOS_USUARIO}`;

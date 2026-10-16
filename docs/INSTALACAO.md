@@ -133,7 +133,7 @@ Em vez de conectar como `postgres` (dono de tudo), a aplicação pode usar o usu
 | `password authentication failed`               | Senha errada na URL. Para trocar: **Database → Settings → Reset database password**.                  |
 | `self-signed certificate in certificate chain` | Com `verify-full`, confira se o `certs/supabase-ca.crt` é o certificado baixado **do mesmo projeto**. |
 | Aviso "migração(ões) pendente(s)" ao iniciar   | Rode `npm run db:migrate` (ou o `database/supabase.sql` de novo).                                     |
-| "Muitas tentativas sem sucesso" no login       | Aguarde 15 minutos ou peça ao administrador para **Redefinir senha** (isso também desbloqueia).       |
+| "Muitas tentativas sem sucesso" no login       | Aguarde o tempo indicado (1 a 15 minutos) ou peça ao administrador para **Desbloquear** a conta.      |
 | `Max client connections reached`               | Muitas conexões abertas. Feche outros `npm run dev` ou reduza `DATABASE_POOL_MAX`.                    |
 | Testes da API recusam rodar                    | `DATABASE_URL_TEST` precisa apontar para o projeto de **testes**, diferente do principal.             |
 | `TRUST_PROXY: use o número de proxies...`      | `TRUST_PROXY=true` não é aceito. Use `false` (sem proxy) ou veja [IMPLANTACAO.md](IMPLANTACAO.md).    |

@@ -9,7 +9,7 @@ import { Field, Input, Select } from '../../components/ui/Field';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Panel } from '../../components/ui/Panel';
 import { useSessao } from '../../features/auth/session';
-import { useAtualizarUsuario, useUsuarios } from '../../features/users/api';
+import { useAtualizarUsuario, useDesbloquearUsuario, useUsuarios } from '../../features/users/api';
 import { ResetPasswordForm, UserForm } from '../../features/users/UserForms';
 import { ApiError } from '../../lib/api';
 import { formatDateTime, formatDiaCurto, formatHorario } from '../../lib/format';
@@ -42,6 +42,7 @@ export function UsersPage() {
   const { data: sessao } = useSessao();
   const usuarios = useUsuarios();
   const atualizar = useAtualizarUsuario();
+  const desbloquear = useDesbloquearUsuario();
 
   const [painel, setPainel] = useState<Painel>(null);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
@@ -274,6 +275,26 @@ export function UsersPage() {
                       >
                         Editar
                       </Button>
+                      {u.bloqueado && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={desbloquear.isPending}
+                          onClick={() => {
+                            setErroAcao(null);
+                            desbloquear.mutate(u.id, {
+                              onSuccess: (d) =>
+                                avisar(
+                                  `${d.nome} foi desbloqueado(a) e já pode entrar.`,
+                                  'As tentativas com senha errada ficam no Histórico, com o IP de origem.',
+                                ),
+                              onError: (error) => setErroAcao(errorMessage(error)),
+                            });
+                          }}
+                        >
+                          Desbloquear
+                        </Button>
+                      )}
                       {!ehVoce && (
                         <Button
                           size="sm"

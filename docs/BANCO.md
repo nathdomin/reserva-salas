@@ -90,7 +90,8 @@ servidor valida no fuso **America/Sao_Paulo**.
 | `perfil`                     | enum        | `COLABORADOR` (padrão) ou `ADMIN`.                                          |
 | `ativo`                      | boolean     | Usuário desativado não entra no sistema; o histórico é preservado.          |
 | `tentativas_falhas`          | int         | Zerado no login certo. 5 falhas → bloqueio.                                 |
-| `bloqueado_ate`              | timestamptz | Fim do bloqueio de 15 minutos.                                              |
+| `bloqueado_ate`              | timestamptz | Fim do bloqueio atual (1, 2, 4, 8 ou no máximo 15 minutos).                 |
+| `bloqueios_seguidos`         | int         | Bloqueios em sequência; define a duração do próximo. Zerado no login certo. |
 | `ultimo_login_em`            | timestamptz |                                                                             |
 | `ativado_em`                 | timestamptz | Criação ou última reativação. Com `ultimo_login_em`, conta os dias sem uso. |
 | `senha_alterada_em`          | timestamptz | Trocar a senha encerra as outras sessões.                                   |

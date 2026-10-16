@@ -26,7 +26,8 @@ import {
 
 /** Falhas seguidas antes do bloqueio temporário. */
 export const MAX_TENTATIVAS_LOGIN = 5;
-export const BLOQUEIO_MINUTOS = 15;
+/** Teto do bloqueio progressivo (1, 2, 4, 8 e no máximo 15 minutos). */
+export const BLOQUEIO_MAXIMO_MINUTOS = 15;
 
 interface AuthRoutesOptions {
   database: Database;
@@ -43,6 +44,7 @@ type UsuarioLoginRow = {
   ativo: boolean;
   senha_hash: string;
   bloqueado: boolean;
+  minutos_bloqueio: number | null;
   sem_uso: boolean;
 };
 
@@ -55,14 +57,17 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
   const rateLimit = { rateLimit: { max: options.loginRateLimitMax, timeWindow: '1 minute' } };
   const bloqueioSimulado = createBloqueioSimulado({
     maxTentativas: MAX_TENTATIVAS_LOGIN,
-    bloqueioMinutos: BLOQUEIO_MINUTOS,
+    maxMinutos: BLOQUEIO_MAXIMO_MINUTOS,
   });
-  const contaBloqueada = () =>
-    new AppError(
+  const contaBloqueada = (minutos: number) => {
+    const tempo = minutos <= 1 ? '1 minuto' : `${minutos} minutos`;
+    return new AppError(
       429,
       ERROR_CODES.CONTA_BLOQUEADA,
-      `Muitas tentativas sem sucesso. Por segurança, o acesso foi bloqueado por ${BLOQUEIO_MINUTOS} minutos.`,
+      `Muitas tentativas sem sucesso. Por segurança, o acesso está bloqueado: tente de novo em ${tempo}. Se não foi você, avise o administrador.`,
+      { minutos: Math.max(1, minutos) },
     );
+  };
 
   app.post('/login', { config: rateLimit }, async (request, reply) => {
     const { email, senha } = loginSchema.parse(request.body ?? {});
@@ -74,22 +79,22 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
     // bloqueio após várias tentativas): as respostas não revelam quem tem conta.
     if (!usuario) {
       await verifyAgainstDummy(senha);
-      if (bloqueioSimulado.bloqueado(email)) throw contaBloqueada();
+      const restantes = bloqueioSimulado.minutosRestantes(email);
+      if (restantes > 0) throw contaBloqueada(restantes);
       bloqueioSimulado.registrarFalha(email);
       throw credenciaisInvalidas();
     }
 
     if (usuario.bloqueado) {
       await verifyAgainstDummy(senha);
-      throw contaBloqueada();
+      throw contaBloqueada(usuario.minutos_bloqueio ?? 1);
     }
 
     if (!(await verifyPassword(senha, usuario.senha_hash))) {
-      const falha = await db.query<{ bloqueado: boolean }>(REGISTRAR_FALHA_LOGIN, [
-        usuario.id,
-        MAX_TENTATIVAS_LOGIN,
-        BLOQUEIO_MINUTOS,
-      ]);
+      const falha = await db.query<{ bloqueado: boolean; minutos: number | null }>(
+        REGISTRAR_FALHA_LOGIN,
+        [usuario.id, MAX_TENTATIVAS_LOGIN, BLOQUEIO_MAXIMO_MINUTOS],
+      );
       await registrarAuditoria(db, {
         atorId: null,
         acao: 'LOGIN_FALHO',
@@ -103,7 +108,7 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
           acao: 'CONTA_BLOQUEADA',
           entidade: 'usuario',
           entidadeId: usuario.id,
-          depois: { minutos: BLOQUEIO_MINUTOS },
+          depois: { minutos: falha.rows[0]?.minutos },
           ip: request.ip,
         });
       }
@@ -124,7 +129,10 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
       );
     }
 
-    await db.query(REGISTRAR_LOGIN_SUCESSO, [usuario.id]);
+    const sucesso = await db.query<{ falhas_desde_ultimo_login: number }>(REGISTRAR_LOGIN_SUCESSO, [
+      usuario.id,
+    ]);
+    const tentativasSemSucesso = sucesso.rows[0]?.falhas_desde_ultimo_login ?? 0;
     if (needsRehash(usuario.senha_hash)) {
       await db.query(ATUALIZAR_HASH_SENHA, [usuario.id, await hashPassword(senha)]);
     }
@@ -144,7 +152,8 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
       perfil: usuario.perfil,
     };
     reply.setCookie(sessions.cookieName, token, sessions.cookieOptions);
-    return { usuario: sessao };
+    // Senhas erradas desde o último acesso: a pessoa é avisada (pode ser alguém tentando).
+    return { usuario: sessao, tentativasSemSucesso };
   });
 
   app.post('/logout', async (request, reply) => {

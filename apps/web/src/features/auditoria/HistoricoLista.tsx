@@ -9,6 +9,7 @@ const CAMPOS: Record<string, string> = {
   email: 'E-mail',
   perfil: 'Perfil',
   ativo: 'Ativo',
+  bloqueado: 'Bloqueado',
   minutos: 'Minutos de bloqueio',
   ultimoAcesso: 'Último acesso',
   diasSemLogin: 'Limite sem login (dias)',

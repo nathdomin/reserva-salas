@@ -105,6 +105,9 @@ Tudo pela própria tela, sem mexer no código:
    antecedência máxima, intervalo entre reuniões e se o motivo das reuniões é visível a todos.
 
 Salas e usuários não são apagados, e sim **desativados**: o histórico de reservas é preservado.
+Se for preciso **excluir** uma pessoa (cadastro errado ou pedido de exclusão de dados), use
+**Excluir** na lista de usuários: sem histórico, a conta é apagada; com histórico, nome, e-mail
+e senha são apagados e as reservas passam a mostrar "Usuário removido".
 Ao desativar uma sala ou uma pessoa com reservas futuras, o sistema pergunta se elas devem ser
 canceladas ou mantidas.
 

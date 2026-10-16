@@ -1,4 +1,6 @@
 import {
+  excluirUsuarioResponseSchema,
+  type ExcluirUsuarioInput,
   atualizarUsuarioResponseSchema,
   listaUsuariosResponseSchema,
   usuarioResponseSchema,
@@ -49,6 +51,20 @@ export function useAtualizarUsuario() {
         body: JSON.stringify(dados),
       });
       return atualizarUsuarioResponseSchema.parse(data);
+    },
+    onSuccess: invalidar,
+  });
+}
+
+export function useExcluirUsuario() {
+  const invalidar = useInvalidarUsuarios();
+  return useMutation({
+    mutationFn: async ({ id, dados }: { id: string; dados: ExcluirUsuarioInput }) => {
+      const data = await apiFetch<unknown>(`/admin/usuarios/${encodeURIComponent(id)}/excluir`, {
+        method: 'POST',
+        body: JSON.stringify(dados),
+      });
+      return excluirUsuarioResponseSchema.parse(data);
     },
     onSuccess: invalidar,
   });

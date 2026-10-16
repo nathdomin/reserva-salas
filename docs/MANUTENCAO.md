@@ -259,4 +259,7 @@ commit;
 ```
 
 Pessoas que saíram da empresa ficam desativadas (não apagadas), porque as reservas e o histórico
-apontam para elas. Se for necessário anonimizar alguém, trate como uma demanda específica.
+apontam para elas. Para um **pedido de exclusão de dados** (LGPD), use **Excluir** em
+**Administração → Usuários**: nome, e-mail e senha são apagados e as reservas ficam como
+"Usuário removido". O histórico de ações já gravado (ex.: o registro de quando a conta foi criada)
+não é alterado, porque é o registro de segurança do sistema; ele sai pela rotina de retenção acima.

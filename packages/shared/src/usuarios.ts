@@ -73,6 +73,43 @@ export const atualizarUsuarioSchema = z
   );
 export type AtualizarUsuarioInput = z.infer<typeof atualizarUsuarioSchema>;
 
+/**
+ * Exclusão de conta (somente administrador). `confirmacao` precisa ser o nome da pessoa,
+ * para ninguém excluir alguém por um clique errado.
+ */
+export const excluirUsuarioSchema = z.object({
+  confirmacao: z
+    .string({ required_error: 'Digite o nome da pessoa para confirmar.' })
+    .trim()
+    .min(1, 'Digite o nome da pessoa para confirmar.')
+    .max(120),
+  /** Se a pessoa tiver reservas futuras: elas são canceladas junto com a exclusão. */
+  reservasFuturas: z.enum(['cancelar']).optional(),
+});
+export type ExcluirUsuarioInput = z.infer<typeof excluirUsuarioSchema>;
+
+/** Compara o nome digitado na confirmação sem diferenciar maiúsculas, acentos nem espaços extras. */
+export function nomeConfere(digitado: string, nome: string): boolean {
+  const normalizar = (t: string) =>
+    t
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  return normalizar(digitado) === normalizar(nome);
+}
+
+export const excluirUsuarioResponseSchema = z.object({
+  /** apagada: a conta deixou de existir; anonimizada: os dados pessoais foram apagados. */
+  modo: z.enum(['apagada', 'anonimizada']),
+  reservasCanceladas: z.number(),
+});
+export type ExcluirUsuarioResponse = z.infer<typeof excluirUsuarioResponseSchema>;
+
+/** Nome exibido no lugar de quem teve a conta excluída. */
+export const NOME_USUARIO_REMOVIDO = 'Usuário removido';
+
 export const redefinirSenhaSchema = z.object({ novaSenha: novaSenhaSchema });
 export type RedefinirSenhaInput = z.infer<typeof redefinirSenhaSchema>;
 

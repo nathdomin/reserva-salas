@@ -10,6 +10,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Panel } from '../../components/ui/Panel';
 import { useSessao } from '../../features/auth/session';
 import { useAtualizarUsuario, useDesbloquearUsuario, useUsuarios } from '../../features/users/api';
+import { ExcluirUsuario } from '../../features/users/ExcluirUsuario';
 import { ResetPasswordForm, UserForm } from '../../features/users/UserForms';
 import { ApiError } from '../../lib/api';
 import { formatDateTime, formatDiaCurto, formatHorario } from '../../lib/format';
@@ -21,6 +22,7 @@ type Painel =
   | { tipo: 'criar' }
   | { tipo: 'editar'; usuario: UsuarioAdmin }
   | { tipo: 'senha'; usuario: UsuarioAdmin }
+  | { tipo: 'excluir'; usuario: UsuarioAdmin }
   | null;
 
 type FiltroStatus = 'todos' | 'ativos' | 'inativos';
@@ -67,9 +69,9 @@ export function UsersPage() {
     setDecisao(null);
   }
 
-  function concluir(mensagem: string) {
+  function concluir(mensagem: string, detalhe?: string) {
     setPainel(null);
-    avisar(mensagem);
+    avisar(mensagem, detalhe);
   }
 
   function alterarStatus(
@@ -163,6 +165,14 @@ export function UsersPage() {
           key={painel.usuario.id}
           usuario={painel.usuario}
           ehVoceMesmo={painel.usuario.id === sessao?.id}
+          onCancel={() => setPainel(null)}
+          onSaved={concluir}
+        />
+      )}
+      {painel?.tipo === 'excluir' && (
+        <ExcluirUsuario
+          key={painel.usuario.id}
+          usuario={painel.usuario}
           onCancel={() => setPainel(null)}
           onSaved={concluir}
         />
@@ -323,6 +333,16 @@ export function UsersPage() {
                           disabled={atualizar.isPending}
                         >
                           Reativar
+                        </Button>
+                      )}
+                      {!ehVoce && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-brand-strong"
+                          onClick={() => abrir({ tipo: 'excluir', usuario: u })}
+                        >
+                          Excluir
                         </Button>
                       )}
                     </div>

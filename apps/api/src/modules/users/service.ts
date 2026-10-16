@@ -2,6 +2,10 @@ import {
   type AtualizarUsuarioInput,
   type CriarUsuarioInput,
   ERROR_CODES,
+  type ExcluirUsuarioInput,
+  type ExcluirUsuarioResponse,
+  NOME_USUARIO_REMOVIDO,
+  nomeConfere,
   type Perfil,
   type UsuarioAdmin,
 } from '@reserva/shared';
@@ -11,6 +15,8 @@ import { registrarAuditoria } from '../audit/service';
 import { hashPassword } from '../auth/password';
 import { DESBLOQUEAR_USUARIO, REMOVER_SESSOES_DO_USUARIO } from '../auth/sql';
 import {
+  ANONIMIZAR_USUARIO,
+  APAGAR_USUARIO,
   ATUALIZAR_USUARIO,
   CANCELAR_RESERVAS_FUTURAS_DO_USUARIO,
   CONTAR_RESERVAS_FUTURAS_DO_USUARIO,
@@ -70,6 +76,60 @@ const naoPermitido = (mensagem: string) =>
 
 async function revogarSessoes(q: Queryable, usuarioId: string) {
   await q.query(REMOVER_SESSOES_DO_USUARIO, [usuarioId, null]);
+}
+
+/**
+ * Reservas futuras de quem vai ser desativado ou excluído. Sem decisão, devolve 409 com a
+ * lista para o administrador escolher; com "cancelar", cancela todas e registra cada uma no
+ * histórico. Devolve quantas foram canceladas. `pergunta` usa {total} para o número.
+ */
+async function decidirReservasFuturas(
+  tx: Queryable,
+  ator: Ator,
+  usuario: { id: string },
+  opcoes: { decisao: string | undefined; pergunta: string; motivo: string },
+): Promise<number> {
+  const { rows: contagem } = await tx.query<{ total: number }>(CONTAR_RESERVAS_FUTURAS_DO_USUARIO, [
+    usuario.id,
+  ]);
+  const total = contagem[0]?.total ?? 0;
+  if (total === 0) return 0;
+  if (!opcoes.decisao) {
+    const { rows: futuras } = await tx.query<{ id: string; inicio: Date; fim: Date; sala: string }>(
+      RESERVAS_FUTURAS_DO_USUARIO,
+      [usuario.id],
+    );
+    throw new AppError(
+      409,
+      ERROR_CODES.USUARIO_COM_RESERVAS_FUTURAS,
+      opcoes.pergunta.replace('{total}', String(total)),
+      {
+        total,
+        reservas: futuras.map((r) => ({
+          id: r.id,
+          inicio: r.inicio.toISOString(),
+          fim: r.fim.toISOString(),
+          sala: r.sala,
+        })),
+      },
+    );
+  }
+  if (opcoes.decisao !== 'cancelar') return 0;
+  const { rows: canceladas } = await tx.query<{ id: string }>(
+    CANCELAR_RESERVAS_FUTURAS_DO_USUARIO,
+    [usuario.id, ator.id, opcoes.motivo],
+  );
+  for (const r of canceladas) {
+    await registrarAuditoria(tx, {
+      atorId: ator.id,
+      acao: 'RESERVA_CANCELADA',
+      entidade: 'reserva',
+      entidadeId: r.id,
+      depois: { status: 'CANCELADA', motivoCancelamento: opcoes.motivo },
+      ip: ator.ip,
+    });
+  }
+  return canceladas.length;
 }
 
 export function createUsersService(database: Database) {
@@ -141,54 +201,14 @@ export function createUsersService(database: Database) {
           }
 
           // Desativar alguém com reservas futuras: o administrador decide o que fazer com elas.
-          let reservasCanceladas = 0;
-          if (atual.ativo && dados.ativo === false) {
-            const { rows: contagem } = await tx.query<{ total: number }>(
-              CONTAR_RESERVAS_FUTURAS_DO_USUARIO,
-              [id],
-            );
-            const total = contagem[0]?.total ?? 0;
-            if (total > 0 && !dados.reservasFuturas) {
-              const { rows: futuras } = await tx.query<{
-                id: string;
-                inicio: Date;
-                fim: Date;
-                sala: string;
-              }>(RESERVAS_FUTURAS_DO_USUARIO, [id]);
-              throw new AppError(
-                409,
-                ERROR_CODES.USUARIO_COM_RESERVAS_FUTURAS,
-                `${atual.nome} tem ${total} reserva(s) futura(s). Escolha se elas serão mantidas ou canceladas.`,
-                {
-                  total,
-                  reservas: futuras.map((r) => ({
-                    id: r.id,
-                    inicio: r.inicio.toISOString(),
-                    fim: r.fim.toISOString(),
-                    sala: r.sala,
-                  })),
-                },
-              );
-            }
-            if (total > 0 && dados.reservasFuturas === 'cancelar') {
-              const motivo = `Responsável (${atual.nome}) desativado pela administração.`;
-              const { rows: canceladas } = await tx.query<{ id: string }>(
-                CANCELAR_RESERVAS_FUTURAS_DO_USUARIO,
-                [id, ator.id, motivo],
-              );
-              reservasCanceladas = canceladas.length;
-              for (const r of canceladas) {
-                await registrarAuditoria(tx, {
-                  atorId: ator.id,
-                  acao: 'RESERVA_CANCELADA',
-                  entidade: 'reserva',
-                  entidadeId: r.id,
-                  depois: { status: 'CANCELADA', motivoCancelamento: motivo },
-                  ip: ator.ip,
-                });
-              }
-            }
-          }
+          const reservasCanceladas =
+            atual.ativo && dados.ativo === false
+              ? await decidirReservasFuturas(tx, ator, atual, {
+                  decisao: dados.reservasFuturas,
+                  pergunta: `${atual.nome} tem {total} reserva(s) futura(s). Escolha se elas serão mantidas ou canceladas.`,
+                  motivo: `Responsável (${atual.nome}) desativado pela administração.`,
+                })
+              : 0;
 
           const { rows: atualizados } = await tx.query<UsuarioRow>(ATUALIZAR_USUARIO, [
             id,
@@ -239,6 +259,73 @@ export function createUsersService(database: Database) {
         if (isPgError(error, PG_ERROR.UNIQUE_VIOLATION, 'usuarios_email_unico')) throw emailEmUso();
         throw error;
       }
+    },
+
+    /**
+     * Exclui a conta. Sem histórico, ela é apagada de verdade; com histórico (reservas ou
+     * ações registradas), os dados pessoais são apagados e o resto fica como "Usuário
+     * removido". Em ambos os casos o acesso termina na hora.
+     */
+    async excluir(
+      ator: Ator,
+      id: string,
+      dados: ExcluirUsuarioInput,
+    ): Promise<ExcluirUsuarioResponse> {
+      if (ator.id === id) throw naoPermitido('Você não pode excluir a própria conta.');
+      return database.transaction(async (tx) => {
+        await tx.query(TRAVAR_ADMINISTRADORES);
+        const { rows } = await tx.query<UsuarioRow>(BUSCAR_USUARIO_PARA_ALTERAR, [id]);
+        const atual = rows[0];
+        if (!atual) throw naoEncontrado();
+
+        if (!nomeConfere(dados.confirmacao, atual.nome)) {
+          const mensagem = `Para confirmar, digite o nome exatamente como está: ${atual.nome}.`;
+          throw new AppError(400, ERROR_CODES.VALIDATION, mensagem, [
+            { campo: 'confirmacao', mensagem },
+          ]);
+        }
+        if (atual.perfil === 'ADMIN' && atual.ativo) {
+          const { rows: contagem } = await tx.query<{ total: number }>(
+            CONTAR_OUTROS_ADMINS_ATIVOS,
+            [id],
+          );
+          if ((contagem[0]?.total ?? 0) === 0) {
+            throw naoPermitido('É preciso manter pelo menos um administrador ativo.');
+          }
+        }
+
+        // O motivo fica gravado na reserva: não repete o nome de quem está sendo excluído.
+        const reservasCanceladas = await decidirReservasFuturas(tx, ator, atual, {
+          decisao: dados.reservasFuturas,
+          pergunta: `${atual.nome} tem {total} reserva(s) futura(s). Para excluir a conta, elas precisam ser canceladas.`,
+          motivo: 'Responsável removido do sistema pela administração.',
+        });
+
+        await revogarSessoes(tx, id);
+        let modo: ExcluirUsuarioResponse['modo'] = 'apagada';
+        await tx.query('savepoint excluir_usuario');
+        try {
+          await tx.query(APAGAR_USUARIO, [id]);
+        } catch (error) {
+          // Tem reservas ou ações no histórico: apaga só os dados pessoais.
+          if (!isPgError(error, PG_ERROR.FOREIGN_KEY_VIOLATION)) throw error;
+          await tx.query('rollback to savepoint excluir_usuario');
+          await tx.query(ANONIMIZAR_USUARIO, [id, NOME_USUARIO_REMOVIDO]);
+          modo = 'anonimizada';
+        }
+
+        // Sem nome nem e-mail no registro: a exclusão não pode deixar os dados para trás.
+        await registrarAuditoria(tx, {
+          atorId: ator.id,
+          acao: 'USUARIO_EXCLUIDO',
+          entidade: 'usuario',
+          entidadeId: id,
+          antes: { perfil: atual.perfil, ativo: atual.ativo },
+          depois: { modo, ...(reservasCanceladas > 0 ? { reservasCanceladas } : {}) },
+          ip: ator.ip,
+        });
+        return { modo, reservasCanceladas };
+      });
     },
 
     /** Libera uma conta bloqueada por senhas erradas, sem trocar a senha. */

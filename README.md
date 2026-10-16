@@ -160,12 +160,12 @@ Pastas criadas durante o uso e que **não** devem ser copiadas nem versionadas: 
 
 ### Privacidade (LGPD)
 
-| Dado                                   | Onde fica           | Por quanto tempo                                                                      |
-| -------------------------------------- | ------------------- | ------------------------------------------------------------------------------------- |
-| Nome, e-mail e perfil dos usuários     | `reserva.usuarios`  | Enquanto a pessoa usar o sistema (é desativada, não apagada, para manter o histórico) |
-| Sessões (IP e navegador de cada login) | `reserva.sessoes`   | Apagadas automaticamente após expirar (a cada hora)                                   |
-| Reservas (motivo, participantes)       | `reserva.reservas`  | Indefinido (histórico)                                                                |
-| Histórico de alterações (com IP)       | `reserva.auditoria` | Indefinido: defina um prazo de retenção (ver abaixo)                                  |
+| Dado                                   | Onde fica           | Por quanto tempo                                                                        |
+| -------------------------------------- | ------------------- | --------------------------------------------------------------------------------------- |
+| Nome, e-mail e perfil dos usuários     | `reserva.usuarios`  | Enquanto a pessoa usar o sistema (é desativada; **Excluir** apaga ou anonimiza a conta) |
+| Sessões (IP e navegador de cada login) | `reserva.sessoes`   | Apagadas automaticamente após expirar (a cada hora)                                     |
+| Reservas (motivo, participantes)       | `reserva.reservas`  | Indefinido (histórico)                                                                  |
+| Histórico de alterações (com IP)       | `reserva.auditoria` | Indefinido: defina um prazo de retenção (ver abaixo)                                    |
 
 O que cada perfil vê: colaboradores veem as reservas de todos (sala, horário, responsável e, se a
 configuração permitir, o motivo); dados de usuários, histórico e configurações são só da

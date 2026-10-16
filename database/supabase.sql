@@ -417,6 +417,52 @@ $sql_0004$;
 end
 $migracao$;
 
+-- ---------------------------------------------------------------------
+-- 0005_exclusao_de_usuarios.sql
+-- ---------------------------------------------------------------------
+do $migracao$
+declare
+  aplicado text;
+begin
+  select checksum into aplicado from reserva.migracoes where nome = '0005_exclusao_de_usuarios.sql';
+  if aplicado is not null then
+    if aplicado <> 'dd377d1f59dac06e637b7ea55bbea21cf9aca1b416ae6281d1a21e05fe19a8e5' then
+      raise exception 'A migração 0005_exclusao_de_usuarios.sql foi alterada depois de aplicada.';
+    end if;
+    raise notice 'já aplicada: 0005_exclusao_de_usuarios.sql';
+    return;
+  end if;
+
+  execute $sql_0005$
+-- =====================================================================
+-- 0005 — Exclusão de contas pelo administrador
+--   * Conta SEM histórico (nunca reservou nem fez nada registrado): é apagada de verdade.
+--   * Conta COM histórico: é anonimizada (nome, e-mail e senha apagados). As reservas e o
+--     histórico continuam, atribuídos a "Usuário removido". As chaves estrangeiras impedem
+--     que uma conta com histórico seja apagada por engano.
+-- =====================================================================
+
+-- Quando a conta foi anonimizada. Conta removida não aparece na lista nem pode ser reativada.
+alter table reserva.usuarios
+  add column removido_em timestamptz,
+  add constraint usuarios_removido_inativo check (removido_em is null or not ativo);
+
+-- O usuário da aplicação (database/papel-aplicacao.sql) passa a poder apagar usuários.
+-- Só os sem histórico conseguem ser apagados: os demais são barrados pelas chaves estrangeiras.
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'reserva_app') then
+    grant delete on reserva.usuarios to reserva_app;
+  end if;
+end;
+$$;
+$sql_0005$;
+
+  insert into reserva.migracoes (nome, checksum) values ('0005_exclusao_de_usuarios.sql', 'dd377d1f59dac06e637b7ea55bbea21cf9aca1b416ae6281d1a21e05fe19a8e5');
+  raise notice 'aplicada: 0005_exclusao_de_usuarios.sql';
+end
+$migracao$;
+
 commit;
 
 -- Conferência: deve listar todas as migrações.

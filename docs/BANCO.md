@@ -94,6 +94,7 @@ servidor valida no fuso **America/Sao_Paulo**.
 | `bloqueios_seguidos`         | int         | Bloqueios em sequência; define a duração do próximo. Zerado no login certo. |
 | `ultimo_login_em`            | timestamptz |                                                                             |
 | `ativado_em`                 | timestamptz | Criação ou última reativação. Com `ultimo_login_em`, conta os dias sem uso. |
+| `removido_em`                | timestamptz | Conta excluída e anonimizada (nome, e-mail e senha apagados).               |
 | `senha_alterada_em`          | timestamptz | Trocar a senha encerra as outras sessões.                                   |
 | `criado_em`, `atualizado_em` | timestamptz | `atualizado_em` é atualizado por trigger.                                   |
 
@@ -197,12 +198,13 @@ Por padrão a API conecta como `postgres`, o dono de tudo. Em produção, recome
 **permissões mínimas**: se a senha da aplicação vazar ou houver um defeito, ele **não consegue**
 apagar tabelas, apagar reservas ou usuários, alterar o histórico nem desligar as proteções.
 
-| Tabela                                           | `reserva_app` pode                   |
-| ------------------------------------------------ | ------------------------------------ |
-| `usuarios`, `salas`, `reservas`, `configuracoes` | ler, inserir, alterar (nunca apagar) |
-| `sessoes`                                        | ler, inserir, alterar, apagar        |
-| `auditoria`                                      | ler e inserir                        |
-| `migracoes`                                      | só ler                               |
+| Tabela                               | `reserva_app` pode                                       |
+| ------------------------------------ | -------------------------------------------------------- |
+| `salas`, `reservas`, `configuracoes` | ler, inserir, alterar (nunca apagar)                     |
+| `usuarios`                           | ler, inserir, alterar e apagar (só contas sem histórico) |
+| `sessoes`                            | ler, inserir, alterar, apagar                            |
+| `auditoria`                          | ler e inserir                                            |
+| `migracoes`                          | só ler                                                   |
 
 ### Passo a passo
 

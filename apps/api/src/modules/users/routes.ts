@@ -1,4 +1,9 @@
-import { atualizarUsuarioSchema, criarUsuarioSchema, redefinirSenhaSchema } from '@reserva/shared';
+import {
+  atualizarUsuarioSchema,
+  criarUsuarioSchema,
+  excluirUsuarioSchema,
+  redefinirSenhaSchema,
+} from '@reserva/shared';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { usuarioAtual, type AuthGuards } from '../auth/guards';
@@ -39,6 +44,12 @@ export const usersRoutes: FastifyPluginAsync<UsersRoutesOptions> = async (
     const { id } = paramsSchema.parse(request.params);
     const dados = atualizarUsuarioSchema.parse(request.body ?? {});
     return users.atualizar(ator(request), id, dados);
+  });
+
+  app.post('/:id/excluir', async (request) => {
+    const { id } = paramsSchema.parse(request.params);
+    const dados = excluirUsuarioSchema.parse(request.body ?? {});
+    return users.excluir(ator(request), id, dados);
   });
 
   app.post('/:id/desbloquear', async (request) => {

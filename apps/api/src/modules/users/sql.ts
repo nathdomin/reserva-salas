@@ -4,21 +4,23 @@ const CAMPOS_USUARIO = `
   (bloqueado_ate is not null and bloqueado_ate > now()) as bloqueado,
   ultimo_login_em, criado_em`;
 
+/** Contas excluídas (anonimizadas) não aparecem: não há mais o que gerenciar nelas. */
 export const LISTAR_USUARIOS = `
   select ${CAMPOS_USUARIO}
     from reserva.usuarios
+   where removido_em is null
    order by ativo desc, lower(nome)`;
 
 export const BUSCAR_USUARIO = `
   select ${CAMPOS_USUARIO}
     from reserva.usuarios
-   where id = $1`;
+   where id = $1 and removido_em is null`;
 
 /** Mesmo que BUSCAR_USUARIO, mas trava a linha até o fim da transação. */
 export const BUSCAR_USUARIO_PARA_ALTERAR = `
   select ${CAMPOS_USUARIO}
     from reserva.usuarios
-   where id = $1
+   where id = $1 and removido_em is null
      for update`;
 
 export const BUSCAR_ID_POR_EMAIL = `
@@ -118,3 +120,20 @@ export const CANCELAR_RESERVAS_FUTURAS_DO_USUARIO = `
          motivo_cancelamento = $3, versao = versao + 1
    where usuario_id = $1 and status = 'ATIVA' and inicio > now()
   returning id`;
+
+/** Apaga a conta. Só funciona sem histórico: reservas e auditoria a protegem (chave estrangeira). */
+export const APAGAR_USUARIO = `
+  delete from reserva.usuarios where id = $1`;
+
+/**
+ * Remove os dados pessoais de uma conta com histórico. O e-mail vira um endereço inválido
+ * e único, a senha deixa de existir (nenhuma senha confere com "removido") e a conta fica
+ * desativada para sempre. Reservas e histórico continuam apontando para esta linha.
+ */
+export const ANONIMIZAR_USUARIO = `
+  update reserva.usuarios
+     set nome = $2, email = 'removido-' || id::text || '@removido.invalid',
+         senha_hash = 'removido', perfil = 'COLABORADOR', ativo = false,
+         tentativas_falhas = 0, bloqueios_seguidos = 0, bloqueado_ate = null,
+         ultimo_login_em = null, removido_em = now()
+   where id = $1`;

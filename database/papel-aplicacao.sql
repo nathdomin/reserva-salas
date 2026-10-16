@@ -6,7 +6,9 @@
 -- não permite apagar tabelas, desligar a proteção do histórico nem ler outros schemas.
 --
 -- Permissões do usuário "reserva_app":
---   usuarios, salas, reservas, configuracoes  ler, inserir e alterar (nunca apagar)
+--   salas, reservas, configuracoes            ler, inserir e alterar (nunca apagar)
+--   usuarios                                  ler, inserir, alterar e apagar (só contas sem
+--                                             histórico; as demais as chaves estrangeiras protegem)
 --   sessoes                                   ler, inserir, alterar e apagar (logout/expiração)
 --   auditoria                                 ler e inserir (nunca alterar nem apagar)
 --   migracoes                                 só ler (o servidor avisa se falta migração)
@@ -50,6 +52,7 @@ grant usage on schema extensions to reserva_app;
 grant select, insert, update on
   reserva.usuarios, reserva.salas, reserva.reservas, reserva.configuracoes
   to reserva_app;
+grant delete on reserva.usuarios to reserva_app;
 grant select, insert, update, delete on reserva.sessoes to reserva_app;
 grant select, insert on reserva.auditoria to reserva_app;
 grant select on reserva.migracoes to reserva_app;

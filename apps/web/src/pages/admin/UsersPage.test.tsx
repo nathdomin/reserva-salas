@@ -84,6 +84,58 @@ describe('Usuários (administrador)', () => {
     ).toBe(true);
   });
 
+  it('Excluir pede o nome da pessoa e, com reservas futuras, o cancelamento', async () => {
+    let chamada = 0;
+    const fetchMock = mockApi(
+      rotas({
+        [`POST /api/admin/usuarios/${COLABORADOR.id}/excluir`]: () =>
+          ++chamada === 1
+            ? {
+                status: 409,
+                body: {
+                  error: {
+                    code: 'USUARIO_COM_RESERVAS_FUTURAS',
+                    message: 'Caio tem 1 reserva futura.',
+                    details: {
+                      total: 1,
+                      reservas: [
+                        {
+                          id: 'r1',
+                          inicio: '2026-11-03T13:00:00.000Z',
+                          fim: '2026-11-03T14:00:00.000Z',
+                          sala: 'Sala Azul',
+                        },
+                      ],
+                    },
+                  },
+                },
+              }
+            : { body: { modo: 'anonimizada', reservasCanceladas: 1 } },
+      }),
+    );
+    const listaEl = await abrirPagina();
+    const minhaLinha = within(listaEl).getByText('Ana Admin').closest('li')!;
+    expect(within(minhaLinha).queryByRole('button', { name: 'Excluir' })).toBeNull();
+
+    const linhaCaio = within(listaEl).getByText('Caio Colaborador').closest('li')!;
+    fireEvent.click(within(linhaCaio).getByRole('button', { name: 'Excluir' }));
+    const confirmar = screen.getByRole('button', { name: 'Excluir conta' }) as HTMLButtonElement;
+    expect(confirmar.disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText(/Para confirmar, digite o nome/), {
+      target: { value: 'caio colaborador' },
+    });
+    expect(confirmar.disabled).toBe(false);
+    fireEvent.click(confirmar);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancelar as reservas e excluir' }));
+    expect(await screen.findByText(/A conta de Caio Colaborador foi excluída/)).toBeTruthy();
+    expect(corpoEnviado(fetchMock, `POST /api/admin/usuarios/${COLABORADOR.id}/excluir`)).toEqual({
+      confirmacao: 'caio colaborador',
+      reservasFuturas: 'cancelar',
+    });
+  });
+
   it('o próprio administrador não tem as opções de desativar nem redefinir senha', async () => {
     mockApi(rotas());
     const listaEl = await abrirPagina();

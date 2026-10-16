@@ -123,6 +123,7 @@ describe('histórico de alterações', () => {
       'Reserva criada',
       'Reserva alterada',
       'Reserva cancelada',
+      'Reserva transferida',
     ]);
   });
 

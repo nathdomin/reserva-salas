@@ -110,7 +110,8 @@ Se for preciso **excluir** uma pessoa (cadastro errado ou pedido de exclusão de
 **Excluir** na lista de usuários: sem histórico, a conta é apagada; com histórico, nome, e-mail
 e senha são apagados e as reservas passam a mostrar "Usuário removido".
 Ao desativar uma sala ou uma pessoa com reservas futuras, o sistema pergunta se elas devem ser
-canceladas ou mantidas.
+canceladas ou mantidas. No caso de uma pessoa, também dá para **transferir** as reservas para
+outra pessoa ativa (mesma sala e horário), na desativação ou na exclusão da conta.
 
 ## 7. Verificação do certificado do banco (obrigatória em produção)
 

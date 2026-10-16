@@ -128,6 +128,22 @@ export const CANCELAR_RESERVAS_FUTURAS_DO_USUARIO = `
    where usuario_id = $1 and status = 'ATIVA' and inicio > now()
   returning id`;
 
+/**
+ * Quem vai receber as reservas: precisa estar ativo e não ter sido excluído. A trava
+ * compartilhada impede que essa pessoa seja desativada ao mesmo tempo.
+ */
+export const BUSCAR_DESTINATARIO = `
+  select id, nome from reserva.usuarios
+   where id = $1 and ativo and removido_em is null
+     for share`;
+
+/** Passa as reservas futuras ativas de $1 para $2 (mesma sala e horário: sem novo conflito). */
+export const TRANSFERIR_RESERVAS_FUTURAS_DO_USUARIO = `
+  update reserva.reservas
+     set usuario_id = $2, versao = versao + 1
+   where usuario_id = $1 and status = 'ATIVA' and inicio > now()
+  returning id`;
+
 /** Apaga a conta. Só funciona sem histórico: reservas e auditoria a protegem (chave estrangeira). */
 export const APAGAR_USUARIO = `
   delete from reserva.usuarios where id = $1`;

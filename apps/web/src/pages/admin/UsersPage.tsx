@@ -15,6 +15,7 @@ import {
   useEncerrarSessoes,
   useUsuarios,
 } from '../../features/users/api';
+import { EscolherDestinatario } from '../../features/users/EscolherDestinatario';
 import { ExcluirUsuario } from '../../features/users/ExcluirUsuario';
 import { ResetPasswordForm, UserForm } from '../../features/users/UserForms';
 import { ApiError } from '../../lib/api';
@@ -56,6 +57,7 @@ export function UsersPage() {
   const [erroAcao, setErroAcao] = useState<string | null>(null);
   const [confirmando, setConfirmando] = useState<string | null>(null);
   const [decisao, setDecisao] = useState<ReservasFuturas | null>(null);
+  const [destino, setDestino] = useState('');
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState<FiltroStatus>('ativos');
 
@@ -83,21 +85,28 @@ export function UsersPage() {
   function alterarStatus(
     usuario: UsuarioAdmin,
     ativo: boolean,
-    reservasFuturas?: 'manter' | 'cancelar',
+    reservasFuturas?: 'manter' | 'cancelar' | 'transferir',
   ) {
     setErroAcao(null);
+    const transferir = reservasFuturas === 'transferir' ? { transferirPara: destino } : {};
     atualizar.mutate(
-      { id: usuario.id, dados: { ativo, ...(reservasFuturas ? { reservasFuturas } : {}) } },
       {
-        onSuccess: ({ usuario: u, reservasCanceladas }) => {
+        id: usuario.id,
+        dados: { ativo, ...(reservasFuturas ? { reservasFuturas } : {}), ...transferir },
+      },
+      {
+        onSuccess: ({ usuario: u, reservasCanceladas, reservasTransferidas }) => {
           setConfirmando(null);
           setDecisao(null);
+          setDestino('');
           avisar(
             ativo
               ? `${u.nome} foi reativado(a) e já pode entrar no sistema.`
-              : reservasCanceladas > 0
-                ? `${u.nome} foi desativado(a) e ${reservasCanceladas} reserva(s) futura(s) foram canceladas.`
-                : `${u.nome} foi desativado(a). As sessões abertas foram encerradas.`,
+              : reservasTransferidas > 0
+                ? `${u.nome} foi desativado(a) e ${reservasTransferidas} reserva(s) futura(s) foram transferidas.`
+                : reservasCanceladas > 0
+                  ? `${u.nome} foi desativado(a) e ${reservasCanceladas} reserva(s) futura(s) foram canceladas.`
+                  : `${u.nome} foi desativado(a). As sessões abertas foram encerradas.`,
           );
         },
         onError: (error) => {
@@ -144,8 +153,24 @@ export function UsersPage() {
               </li>
             ))}
           </ul>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="sm:w-72">
+              <EscolherDestinatario
+                excluirId={decisao.usuario.id}
+                valor={destino}
+                onChange={setDestino}
+              />
+            </div>
+            <Button
+              onClick={() => alterarStatus(decisao.usuario, false, 'transferir')}
+              disabled={atualizar.isPending || !destino}
+            >
+              Desativar e transferir as reservas
+            </Button>
+          </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
+              variant="secondary"
               onClick={() => alterarStatus(decisao.usuario, false, 'cancelar')}
               disabled={atualizar.isPending}
             >

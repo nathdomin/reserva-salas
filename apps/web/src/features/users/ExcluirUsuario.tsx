@@ -8,6 +8,7 @@ import { ApiError } from '../../lib/api';
 import { formatDiaCurto, formatHorario } from '../../lib/format';
 import { apiFieldErrors, errorMessage } from '../../lib/forms';
 import { useExcluirUsuario } from './api';
+import { EscolherDestinatario } from './EscolherDestinatario';
 
 interface ReservasFuturas {
   total: number;
@@ -20,27 +21,42 @@ interface ExcluirUsuarioProps {
   onSaved: (mensagem: string, detalhe?: string) => void;
 }
 
-/** Exclusão de conta: pede o nome da pessoa e, se preciso, o cancelamento das reservas futuras. */
+/**
+ * Exclusão de conta: pede o nome da pessoa e, se ela tiver reservas futuras, se elas vão
+ * para outra pessoa ou serão canceladas.
+ */
 export function ExcluirUsuario({ usuario, onCancel, onSaved }: ExcluirUsuarioProps) {
   const excluir = useExcluirUsuario();
   const [confirmacao, setConfirmacao] = useState('');
   const [futuras, setFuturas] = useState<ReservasFuturas | null>(null);
+  const [destino, setDestino] = useState('');
   const confere = nomeConfere(confirmacao, usuario.nome);
 
-  function enviar(event: Pick<FormEvent, 'preventDefault'>, cancelarReservas = false) {
+  function enviar(
+    event: Pick<FormEvent, 'preventDefault'>,
+    reservasFuturas?: 'cancelar' | 'transferir',
+  ) {
     event.preventDefault();
     if (!confere) return;
     excluir.mutate(
       {
         id: usuario.id,
-        dados: { confirmacao, ...(cancelarReservas ? { reservasFuturas: 'cancelar' } : {}) },
+        dados: {
+          confirmacao,
+          ...(reservasFuturas ? { reservasFuturas } : {}),
+          ...(reservasFuturas === 'transferir' ? { transferirPara: destino } : {}),
+        },
       },
       {
-        onSuccess: ({ modo, reservasCanceladas }) => {
-          const canceladas =
-            reservasCanceladas > 0 ? ` ${reservasCanceladas} reserva(s) futura(s) canceladas.` : '';
+        onSuccess: ({ modo, reservasCanceladas, reservasTransferidas }) => {
+          const reservas =
+            reservasTransferidas > 0
+              ? ` ${reservasTransferidas} reserva(s) futura(s) transferidas.`
+              : reservasCanceladas > 0
+                ? ` ${reservasCanceladas} reserva(s) futura(s) canceladas.`
+                : '';
           onSaved(
-            `A conta de ${usuario.nome} foi excluída.${canceladas}`,
+            `A conta de ${usuario.nome} foi excluída.${reservas}`,
             modo === 'apagada'
               ? 'Ela não tinha histórico e foi apagada por completo.'
               : 'Nome, e-mail e senha foram apagados. Reservas e histórico continuam, como “Usuário removido”.',
@@ -58,10 +74,12 @@ export function ExcluirUsuario({ usuario, onCancel, onSaved }: ExcluirUsuarioPro
     );
   }
 
-  const erroCampo = apiFieldErrors(excluir.error).confirmacao;
+  const errosCampos = apiFieldErrors(excluir.error);
+  const erroCampo = errosCampos.confirmacao;
   const mostrarErro =
     excluir.isError &&
     !erroCampo &&
+    !errosCampos.transferirPara &&
     !(
       excluir.error instanceof ApiError &&
       excluir.error.code === ERROR_CODES.USUARIO_COM_RESERVAS_FUTURAS
@@ -92,18 +110,40 @@ export function ExcluirUsuario({ usuario, onCancel, onSaved }: ExcluirUsuarioPro
         {futuras && (
           <Alert
             tone="error"
-            title={`${usuario.nome} tem ${futuras.total} reserva(s) futura(s). Para excluir a conta, elas serão canceladas.`}
+            title={`${usuario.nome} tem ${futuras.total} reserva(s) futura(s). Para excluir a conta, transfira ou cancele essas reservas.`}
             className="bg-canvas"
             action={
-              <Button
-                type="button"
-                variant="danger"
-                size="sm"
-                disabled={excluir.isPending || !confere}
-                onClick={(e) => enviar(e, true)}
-              >
-                Cancelar as reservas e excluir
-              </Button>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <div className="sm:w-72">
+                    <EscolherDestinatario
+                      excluirId={usuario.id}
+                      valor={destino}
+                      onChange={setDestino}
+                      erro={errosCampos.transferirPara}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={excluir.isPending || !confere || !destino}
+                    onClick={(e) => enviar(e, 'transferir')}
+                  >
+                    Transferir as reservas e excluir
+                  </Button>
+                </div>
+                <div>
+                  <Button
+                    type="button"
+                    variant="danger"
+                    size="sm"
+                    disabled={excluir.isPending || !confere}
+                    onClick={(e) => enviar(e, 'cancelar')}
+                  >
+                    Cancelar as reservas e excluir
+                  </Button>
+                </div>
+              </div>
             }
           >
             <ul className="flex max-h-40 flex-col gap-1 overflow-y-auto">

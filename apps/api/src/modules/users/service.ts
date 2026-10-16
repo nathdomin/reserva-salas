@@ -18,6 +18,8 @@ import {
   ANONIMIZAR_USUARIO,
   APAGAR_USUARIO,
   ATUALIZAR_USUARIO,
+  BUSCAR_DESTINATARIO,
+  TRANSFERIR_RESERVAS_FUTURAS_DO_USUARIO,
   CANCELAR_RESERVAS_FUTURAS_DO_USUARIO,
   CONTAR_RESERVAS_FUTURAS_DO_USUARIO,
   RESERVAS_FUTURAS_DO_USUARIO,
@@ -82,22 +84,35 @@ async function revogarSessoes(q: Queryable, usuarioId: string) {
   await q.query(REMOVER_SESSOES_DO_USUARIO, [usuarioId, null]);
 }
 
+/** O que aconteceu com as reservas futuras de quem foi desativado ou excluído. */
+interface ResultadoReservasFuturas {
+  canceladas: number;
+  transferidas: number;
+}
+
 /**
  * Reservas futuras de quem vai ser desativado ou excluído. Sem decisão, devolve 409 com a
- * lista para o administrador escolher; com "cancelar", cancela todas e registra cada uma no
- * histórico. Devolve quantas foram canceladas. `pergunta` usa {total} para o número.
+ * lista para o administrador escolher. Com "cancelar", cancela todas; com "transferir", passa
+ * todas para `transferirPara` (pessoa ativa, diferente desta). Cada reserva fica registrada
+ * no histórico. `pergunta` usa {total} para o número.
  */
 async function decidirReservasFuturas(
   tx: Queryable,
   ator: Ator,
   usuario: { id: string },
-  opcoes: { decisao: string | undefined; pergunta: string; motivo: string },
-): Promise<number> {
+  opcoes: {
+    decisao: string | undefined;
+    transferirPara?: string | undefined;
+    pergunta: string;
+    motivo: string;
+  },
+): Promise<ResultadoReservasFuturas> {
+  const nada = { canceladas: 0, transferidas: 0 };
   const { rows: contagem } = await tx.query<{ total: number }>(CONTAR_RESERVAS_FUTURAS_DO_USUARIO, [
     usuario.id,
   ]);
   const total = contagem[0]?.total ?? 0;
-  if (total === 0) return 0;
+  if (total === 0) return nada;
   if (!opcoes.decisao) {
     const { rows: futuras } = await tx.query<{ id: string; inicio: Date; fim: Date; sala: string }>(
       RESERVAS_FUTURAS_DO_USUARIO,
@@ -118,7 +133,39 @@ async function decidirReservasFuturas(
       },
     );
   }
-  if (opcoes.decisao !== 'cancelar') return 0;
+  if (opcoes.decisao === 'transferir') {
+    const campoErro = (mensagem: string) =>
+      new AppError(400, ERROR_CODES.VALIDATION, mensagem, [{ campo: 'transferirPara', mensagem }]);
+    if (!opcoes.transferirPara) throw campoErro('Escolha para quem transferir as reservas.');
+    if (opcoes.transferirPara === usuario.id) {
+      throw campoErro('Escolha outra pessoa para receber as reservas.');
+    }
+    const { rows: destino } = await tx.query<{ id: string; nome: string }>(BUSCAR_DESTINATARIO, [
+      opcoes.transferirPara,
+    ]);
+    const recebe = destino[0];
+    if (!recebe) throw campoErro('A pessoa escolhida não está ativa no sistema.');
+
+    const { rows: transferidas } = await tx.query<{ id: string }>(
+      TRANSFERIR_RESERVAS_FUTURAS_DO_USUARIO,
+      [usuario.id, recebe.id],
+    );
+    for (const r of transferidas) {
+      // Só ids e o nome de quem recebe: o registro não guarda o nome de quem pode ser excluído.
+      await registrarAuditoria(tx, {
+        atorId: ator.id,
+        acao: 'RESERVA_TRANSFERIDA',
+        entidade: 'reserva',
+        entidadeId: r.id,
+        antes: { responsavelId: usuario.id },
+        depois: { responsavelId: recebe.id, responsavel: recebe.nome },
+        ip: ator.ip,
+      });
+    }
+    return { canceladas: 0, transferidas: transferidas.length };
+  }
+
+  if (opcoes.decisao !== 'cancelar') return nada;
   const { rows: canceladas } = await tx.query<{ id: string }>(
     CANCELAR_RESERVAS_FUTURAS_DO_USUARIO,
     [usuario.id, ator.id, opcoes.motivo],
@@ -133,7 +180,7 @@ async function decidirReservasFuturas(
       ip: ator.ip,
     });
   }
-  return canceladas.length;
+  return { canceladas: canceladas.length, transferidas: 0 };
 }
 
 export function createUsersService(database: Database) {
@@ -177,7 +224,11 @@ export function createUsersService(database: Database) {
       ator: Ator,
       id: string,
       dados: AtualizarUsuarioInput,
-    ): Promise<{ usuario: UsuarioAdmin; reservasCanceladas: number }> {
+    ): Promise<{
+      usuario: UsuarioAdmin;
+      reservasCanceladas: number;
+      reservasTransferidas: number;
+    }> {
       try {
         return await database.transaction(async (tx) => {
           await tx.query(TRAVAR_ADMINISTRADORES);
@@ -206,14 +257,15 @@ export function createUsersService(database: Database) {
           }
 
           // Desativar alguém com reservas futuras: o administrador decide o que fazer com elas.
-          const reservasCanceladas =
+          const { canceladas: reservasCanceladas, transferidas: reservasTransferidas } =
             atual.ativo && dados.ativo === false
               ? await decidirReservasFuturas(tx, ator, atual, {
                   decisao: dados.reservasFuturas,
-                  pergunta: `${atual.nome} tem {total} reserva(s) futura(s). Escolha se elas serão mantidas ou canceladas.`,
+                  transferirPara: dados.transferirPara,
+                  pergunta: `${atual.nome} tem {total} reserva(s) futura(s). Escolha se elas serão mantidas, transferidas ou canceladas.`,
                   motivo: `Responsável (${atual.nome}) desativado pela administração.`,
                 })
-              : 0;
+              : { canceladas: 0, transferidas: 0 };
 
           const { rows: atualizados } = await tx.query<UsuarioRow>(ATUALIZAR_USUARIO, [
             id,
@@ -240,6 +292,7 @@ export function createUsersService(database: Database) {
             }
           }
           if (reservasCanceladas > 0) depois.reservasCanceladas = reservasCanceladas;
+          if (reservasTransferidas > 0) depois.reservasTransferidas = reservasTransferidas;
 
           if (Object.keys(depois).length > 0) {
             const acao =
@@ -258,7 +311,7 @@ export function createUsersService(database: Database) {
               ip: ator.ip,
             });
           }
-          return { usuario: novo, reservasCanceladas };
+          return { usuario: novo, reservasCanceladas, reservasTransferidas };
         });
       } catch (error) {
         if (isPgError(error, PG_ERROR.UNIQUE_VIOLATION, 'usuarios_email_unico')) throw emailEmUso();
@@ -300,11 +353,13 @@ export function createUsersService(database: Database) {
         }
 
         // O motivo fica gravado na reserva: não repete o nome de quem está sendo excluído.
-        const reservasCanceladas = await decidirReservasFuturas(tx, ator, atual, {
-          decisao: dados.reservasFuturas,
-          pergunta: `${atual.nome} tem {total} reserva(s) futura(s). Para excluir a conta, elas precisam ser canceladas.`,
-          motivo: 'Responsável removido do sistema pela administração.',
-        });
+        const { canceladas: reservasCanceladas, transferidas: reservasTransferidas } =
+          await decidirReservasFuturas(tx, ator, atual, {
+            decisao: dados.reservasFuturas,
+            transferirPara: dados.transferirPara,
+            pergunta: `${atual.nome} tem {total} reserva(s) futura(s). Para excluir a conta, transfira ou cancele essas reservas.`,
+            motivo: 'Responsável removido do sistema pela administração.',
+          });
 
         await revogarSessoes(tx, id);
         let modo: ExcluirUsuarioResponse['modo'] = 'apagada';
@@ -326,10 +381,14 @@ export function createUsersService(database: Database) {
           entidade: 'usuario',
           entidadeId: id,
           antes: { perfil: atual.perfil, ativo: atual.ativo },
-          depois: { modo, ...(reservasCanceladas > 0 ? { reservasCanceladas } : {}) },
+          depois: {
+            modo,
+            ...(reservasCanceladas > 0 ? { reservasCanceladas } : {}),
+            ...(reservasTransferidas > 0 ? { reservasTransferidas } : {}),
+          },
           ip: ator.ip,
         });
-        return { modo, reservasCanceladas };
+        return { modo, reservasCanceladas, reservasTransferidas };
       });
     },
 

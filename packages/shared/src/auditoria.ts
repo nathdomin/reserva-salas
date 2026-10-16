@@ -23,6 +23,7 @@ export const ACOES_AUDITORIA = [
   'RESERVA_CRIADA',
   'RESERVA_ALTERADA',
   'RESERVA_CANCELADA',
+  'RESERVA_TRANSFERIDA',
   'CONFIGURACOES_ALTERADAS',
 ] as const;
 export type AcaoAuditoria = (typeof ACOES_AUDITORIA)[number];
@@ -49,6 +50,7 @@ export const ACAO_AUDITORIA_LABEL: Record<AcaoAuditoria, string> = {
   RESERVA_CRIADA: 'Reserva criada',
   RESERVA_ALTERADA: 'Reserva alterada',
   RESERVA_CANCELADA: 'Reserva cancelada',
+  RESERVA_TRANSFERIDA: 'Reserva transferida',
   CONFIGURACOES_ALTERADAS: 'Configurações alteradas',
 };
 

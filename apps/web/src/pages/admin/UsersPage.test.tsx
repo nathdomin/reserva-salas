@@ -315,6 +315,69 @@ describe('Usuários (administrador)', () => {
     expect(corpoEnviado(fetchMock, chave)).toEqual({ ativo: false, reservasFuturas: 'cancelar' });
   });
 
+  it('desativar pode transferir as reservas futuras para outra pessoa ativa', async () => {
+    const chave = `PATCH /api/admin/usuarios/${COLABORADOR.id}`;
+    const fetchMock = mockApi(
+      rotas({
+        [chave]: ({ body }) =>
+          (body as { reservasFuturas?: string }).reservasFuturas
+            ? {
+                body: {
+                  usuario: usuarioAdmin(COLABORADOR, { ativo: false }),
+                  reservasCanceladas: 0,
+                  reservasTransferidas: 1,
+                },
+              }
+            : {
+                status: 409,
+                body: {
+                  error: {
+                    code: 'USUARIO_COM_RESERVAS_FUTURAS',
+                    message: 'Caio Colaborador tem 1 reserva(s) futura(s).',
+                    details: {
+                      total: 1,
+                      reservas: [
+                        {
+                          id: 'ee000000-0000-4000-8000-000000000001',
+                          inicio: '2026-12-01T13:00:00.000Z',
+                          fim: '2026-12-01T14:00:00.000Z',
+                          sala: 'Sala Azul',
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+      }),
+    );
+    const listaEl = await abrirPagina();
+    const linha = within(listaEl).getByText('Caio Colaborador').closest('li')!;
+    fireEvent.click(within(linha).getByRole('button', { name: 'Desativar' }));
+    fireEvent.click(within(linha).getByRole('button', { name: 'Confirmar desativação' }));
+
+    const seletor = (await screen.findByLabelText(
+      'Transferir as reservas para',
+    )) as HTMLSelectElement;
+    // Só pessoas ativas, e nunca quem está saindo.
+    const nomes = [...seletor.options].map((o) => o.textContent);
+    expect(nomes).toEqual(['Escolha uma pessoa…', 'Ana Admin']);
+    const transferir = screen.getByRole('button', {
+      name: 'Desativar e transferir as reservas',
+    }) as HTMLButtonElement;
+    expect(transferir.disabled).toBe(true);
+
+    fireEvent.change(seletor, { target: { value: ADMIN.id } });
+    fireEvent.click(transferir);
+    expect(
+      await screen.findByText(/desativado\(a\) e 1 reserva\(s\) futura\(s\) foram transferidas/),
+    ).toBeTruthy();
+    expect(corpoEnviado(fetchMock, chave)).toEqual({
+      ativo: false,
+      reservasFuturas: 'transferir',
+      transferirPara: ADMIN.id,
+    });
+  });
+
   it('editar envia apenas os campos alterados', async () => {
     const fetchMock = mockApi(
       rotas({

@@ -46,7 +46,7 @@ describe('exclusão de contas (administrador)', () => {
     const engano = await criarUsuarioTeste(ctx.database.pool, { nome: 'Cadastro Errado' });
     const res = await excluir(engano.id, { confirmacao: 'cadastro errado' });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ modo: 'apagada', reservasCanceladas: 0 });
+    expect(res.json()).toEqual({ modo: 'apagada', reservasCanceladas: 0, reservasTransferidas: 0 });
     expect(await linha(engano.id)).toBeUndefined();
 
     const { rows } = await ctx.database.pool.query(
@@ -79,7 +79,11 @@ describe('exclusão de contas (administrador)', () => {
       reservasFuturas: 'cancelar',
     });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ modo: 'anonimizada', reservasCanceladas: 1 });
+    expect(res.json()).toEqual({
+      modo: 'anonimizada',
+      reservasCanceladas: 1,
+      reservasTransferidas: 0,
+    });
 
     const dados = await linha(pessoa.id);
     expect(dados.nome).toBe('Usuário removido');

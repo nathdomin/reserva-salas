@@ -57,35 +57,52 @@ export const criarUsuarioSchema = z
   });
 export type CriarUsuarioInput = z.infer<typeof criarUsuarioSchema>;
 
+const transferirParaSchema = z.string().uuid('Escolha para quem transferir.').optional();
+
+/** "transferir" exige saber para quem. */
+function exigeDestinatario(d: { reservasFuturas?: string | undefined; transferirPara?: string }) {
+  return d.reservasFuturas !== 'transferir' || Boolean(d.transferirPara);
+}
+const mensagemDestinatario = {
+  path: ['transferirPara'],
+  message: 'Escolha para quem transferir as reservas.',
+};
+
 export const atualizarUsuarioSchema = z
   .object({
     nome: nomeSchema.optional(),
     email: emailSchema.optional(),
     perfil: perfilSchema.optional(),
     ativo: z.boolean({ invalid_type_error: 'Valor inválido.' }).optional(),
-    /** Ao desativar alguém com reservas futuras: cancelar ou manter essas reservas. */
-    reservasFuturas: z.enum(['manter', 'cancelar']).optional(),
+    /** Ao desativar alguém com reservas futuras: manter, cancelar ou transferir essas reservas. */
+    reservasFuturas: z.enum(['manter', 'cancelar', 'transferir']).optional(),
+    /** Com "transferir": quem passa a ser o responsável pelas reservas. */
+    transferirPara: transferirParaSchema,
   })
   .refine(
-    ({ reservasFuturas: _decisao, ...campos }) =>
+    ({ reservasFuturas: _decisao, transferirPara: _destino, ...campos }) =>
       Object.values(campos).some((value) => value !== undefined),
     { message: 'Nenhuma alteração informada.' },
-  );
+  )
+  .refine(exigeDestinatario, mensagemDestinatario);
 export type AtualizarUsuarioInput = z.infer<typeof atualizarUsuarioSchema>;
 
 /**
  * Exclusão de conta (somente administrador). `confirmacao` precisa ser o nome da pessoa,
  * para ninguém excluir alguém por um clique errado.
  */
-export const excluirUsuarioSchema = z.object({
-  confirmacao: z
-    .string({ required_error: 'Digite o nome da pessoa para confirmar.' })
-    .trim()
-    .min(1, 'Digite o nome da pessoa para confirmar.')
-    .max(120),
-  /** Se a pessoa tiver reservas futuras: elas são canceladas junto com a exclusão. */
-  reservasFuturas: z.enum(['cancelar']).optional(),
-});
+export const excluirUsuarioSchema = z
+  .object({
+    confirmacao: z
+      .string({ required_error: 'Digite o nome da pessoa para confirmar.' })
+      .trim()
+      .min(1, 'Digite o nome da pessoa para confirmar.')
+      .max(120),
+    /** Se a pessoa tiver reservas futuras: canceladas ou transferidas junto com a exclusão. */
+    reservasFuturas: z.enum(['cancelar', 'transferir']).optional(),
+    transferirPara: transferirParaSchema,
+  })
+  .refine(exigeDestinatario, mensagemDestinatario);
 export type ExcluirUsuarioInput = z.infer<typeof excluirUsuarioSchema>;
 
 /** Compara o nome digitado na confirmação sem diferenciar maiúsculas, acentos nem espaços extras. */
@@ -104,6 +121,7 @@ export const excluirUsuarioResponseSchema = z.object({
   /** apagada: a conta deixou de existir; anonimizada: os dados pessoais foram apagados. */
   modo: z.enum(['apagada', 'anonimizada']),
   reservasCanceladas: z.number(),
+  reservasTransferidas: z.number().default(0),
 });
 export type ExcluirUsuarioResponse = z.infer<typeof excluirUsuarioResponseSchema>;
 
@@ -159,4 +177,6 @@ export const atualizarUsuarioResponseSchema = z.object({
   usuario: usuarioAdminSchema,
   /** Reservas futuras canceladas junto com a desativação. */
   reservasCanceladas: z.number().default(0),
+  /** Reservas futuras transferidas para outra pessoa junto com a desativação. */
+  reservasTransferidas: z.number().default(0),
 });

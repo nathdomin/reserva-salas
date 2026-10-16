@@ -2,6 +2,7 @@ import { loginSchema } from '@reserva/shared';
 import { useState, type FormEvent } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router';
 import { destinoSeguro } from '../components/auth/guards';
+import { BrandMark } from '../components/layout/BrandMark';
 import logo from '../assets/logo-Empresa-Empresa.webp';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
@@ -43,16 +44,7 @@ export function LoginPage() {
     <main className="min-h-dvh bg-paper lg:grid lg:grid-cols-[46%_1fr]">
       {/* Lado da marca: faixa vermelha no celular, metade da tela no computador. */}
       <section className="relative overflow-hidden bg-[radial-gradient(110%_80%_at_0%_0%,var(--color-brand)_0%,var(--color-brand-strong)_60%)] px-6 pt-7 pb-16 text-paper lg:flex lg:flex-col lg:p-12">
-        <div className="flex items-center gap-3">
-          <img
-            src={logo}
-            alt="Empresa"
-            width={68}
-            height={36}
-            className="h-10 w-auto rounded-lg bg-paper px-2 py-1.5"
-          />
-          <span className="text-xl font-bold tracking-tight">MeetKof</span>
-        </div>
+        <BrandMark invertida tamanho="lg" />
         <p className="mt-7 max-w-[14ch] text-3xl leading-tight font-semibold tracking-tight lg:mt-auto lg:text-5xl">
           Sua sala de reunião, em poucos toques.
         </p>
@@ -86,6 +78,14 @@ export function LoginPage() {
 
       {/* Formulário: cartão sobre a faixa no celular; coluna limpa no computador. */}
       <div className="relative -mt-8 px-4 pb-10 lg:mt-0 lg:flex lg:flex-col lg:justify-center lg:px-18">
+        {/* Logo oficial no lado branco, com respiro (onde ele aparece do jeito certo). */}
+        <img
+          src={logo}
+          alt="Empresa"
+          width={84}
+          height={44}
+          className="absolute top-12 left-18 hidden h-11 w-auto lg:block"
+        />
         <div className="mx-auto w-full max-w-sm animate-subir rounded-xl border border-line bg-paper p-6 shadow-card lg:mx-0 lg:border-0 lg:p-0 lg:shadow-none">
           <h1 className="text-2xl font-semibold tracking-tight">Entrar</h1>
           <p className="mt-1 text-md text-muted">Use seu e-mail corporativo e sua senha.</p>
@@ -125,6 +125,16 @@ export function LoginPage() {
 
         <p className="mx-auto mt-6 max-w-sm text-sm text-muted lg:mx-0">
           Não tem acesso ou esqueceu a senha? Fale com o administrador do sistema.
+        </p>
+        <p className="mt-8 flex items-center justify-center gap-2.5 text-xs text-muted lg:hidden">
+          <img
+            src={logo}
+            alt="Empresa"
+            width={50}
+            height={26}
+            className="h-[26px] w-auto"
+          />
+          Setor administrativo
         </p>
       </div>
     </main>

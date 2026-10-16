@@ -1,13 +1,12 @@
 import { Menu, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
-import logo from '../../assets/logo-Empresa-Empresa.webp';
 import { useSessao } from '../../features/auth/session';
 import { Avisos } from '../../features/avisos/Avisos';
 import { useMinhasReservas } from '../../features/reservas/api';
 import { cn } from '../../lib/cn';
 import { ButtonLink } from '../ui/Button';
-import { BrandMark } from './BrandMark';
+import { AssinaturaEmpresa, BrandMark } from './BrandMark';
 import { PainelAgora } from './PainelAgora';
 import { SideNav } from './SideNav';
 import { UserMenu } from './UserMenu';
@@ -99,28 +98,13 @@ export function AppLayout() {
 
       {/* Menu lateral (computador) */}
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-paper lg:flex">
-        {/* Topo com a marca, no mesmo vermelho da tela de entrada. */}
-        <Link
-          to="/"
-          aria-label="Início"
-          className="relative flex items-center gap-3 overflow-hidden bg-[radial-gradient(120%_140%_at_0%_0%,var(--color-brand)_0%,var(--color-brand-strong)_70%)] px-5 py-5 text-paper"
-        >
-          <img
-            src={logo}
-            alt=""
-            width={68}
-            height={36}
-            className="h-9 w-auto shrink-0 rounded-md bg-paper px-1.5 py-1"
-          />
-          <span className="leading-tight">
-            <span className="block text-base font-bold tracking-tight">MeetKof</span>
-            <span className="block text-xs text-paper/85">Setor administrativo</span>
-          </span>
-          <span
-            aria-hidden
-            className="pointer-events-none absolute -top-8 -right-8 size-24 rounded-full bg-paper/10"
-          />
-        </Link>
+        {/* Topo: ícone e nome do MeetKof, com o logo da empresa como assinatura. */}
+        <div className="flex flex-col gap-2.5 border-b border-line px-5 py-5">
+          <Link to="/" aria-label="Início" className="w-fit rounded-md">
+            <BrandMark tamanho="md" />
+          </Link>
+          <AssinaturaEmpresa />
+        </div>
         {/* Em telas baixas só o meio rola: a marca e a pessoa ficam sempre à vista. */}
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-4">
           <SideNav perfil={usuario.perfil} contadores={contadores} />
@@ -182,8 +166,9 @@ export function AppLayout() {
             contadores={contadores}
             onNavigate={() => setMenuOpen(false)}
           />
-          <div className="mt-auto">
+          <div className="mt-auto flex flex-col gap-4">
             <UserMenu usuario={usuario} onNavigate={() => setMenuOpen(false)} />
+            <AssinaturaEmpresa className="border-t border-line px-2 pt-4" />
           </div>
         </div>
       </div>

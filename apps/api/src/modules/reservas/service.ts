@@ -25,6 +25,7 @@ import {
   BUSCAR_RESERVA_PARA_ALTERAR,
   CANCELAR_RESERVA,
   CONFLITOS,
+  CONTAR_RESERVAS_FUTURAS,
   CRIAR_RESERVA,
   LISTAR_RESERVAS_PERIODO,
   MINHAS_ANTERIORES,
@@ -44,6 +45,7 @@ type ConfigRow = {
   antecedencia_maxima_dias: number;
   intervalo_entre_reunioes_minutos: number;
   desativar_apos_dias_sem_login: number | null;
+  max_reservas_futuras_por_pessoa: number | null;
 };
 
 type ReservaRow = {
@@ -80,6 +82,7 @@ export async function carregarConfiguracoes(db: Queryable): Promise<Configuracoe
     antecedenciaMaximaDias: c.antecedencia_maxima_dias,
     intervaloEntreReunioesMinutos: c.intervalo_entre_reunioes_minutos,
     desativarAposDiasSemLogin: c.desativar_apos_dias_sem_login,
+    maxReservasFuturasPorPessoa: c.max_reservas_futuras_por_pessoa,
   };
 }
 
@@ -381,6 +384,21 @@ export function createReservasService(
           const { rows: pessoa } = await tx.query<{ ativo: boolean }>(TRAVAR_USUARIO, [viewer.id]);
           if (!pessoa[0]?.ativo) {
             throw new AppError(401, ERROR_CODES.NAO_AUTENTICADO, 'Seu acesso foi encerrado.');
+          }
+          // Limite de reservas futuras por pessoa (administradores não têm limite).
+          const limite = config.maxReservasFuturasPorPessoa;
+          if (limite !== null && viewer.perfil !== 'ADMIN') {
+            const { rows: contagem } = await tx.query<{ total: number }>(CONTAR_RESERVAS_FUTURAS, [
+              viewer.id,
+            ]);
+            if ((contagem[0]?.total ?? 0) >= limite) {
+              throw new AppError(
+                422,
+                ERROR_CODES.LIMITE_DE_RESERVAS,
+                `Você já tem ${limite} reservas futuras, o máximo por pessoa. Cancele alguma que não vá usar ou fale com o administrador.`,
+                { limite },
+              );
+            }
           }
           const sala = await buscarSala(tx, input.salaId, true);
           if (!sala.ativo) throw salaInativa(sala);

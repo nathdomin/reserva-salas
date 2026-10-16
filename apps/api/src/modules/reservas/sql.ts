@@ -4,7 +4,7 @@ export const BUSCAR_CONFIGURACOES = `
          to_char(horario_fim, 'HH24:MI') as horario_fim,
          granularidade_minutos, duracao_minima_minutos, duracao_maxima_minutos,
          antecedencia_maxima_dias, intervalo_entre_reunioes_minutos,
-         desativar_apos_dias_sem_login
+         desativar_apos_dias_sem_login, max_reservas_futuras_por_pessoa
     from reserva.configuracoes
    where id`;
 
@@ -46,9 +46,19 @@ export const MINHAS_ANTERIORES = `${SELECT_RESERVA}
    order by r.inicio desc
    limit $2`;
 
-/** Trava (compartilhada) a linha de quem reserva: a desativação dessa pessoa espera. */
+/**
+ * Trava a linha de quem reserva: a desativação dessa pessoa espera, e duas reservas da mesma
+ * pessoa ao mesmo tempo entram uma de cada vez (o limite por pessoa não é furado). "no key
+ * update" não bloqueia as chaves estrangeiras que apontam para a pessoa.
+ */
 export const TRAVAR_USUARIO = `
-  select ativo from reserva.usuarios where id = $1 for share`;
+  select ativo from reserva.usuarios where id = $1 for no key update`;
+
+/** Reservas ativas da pessoa que ainda não começaram (para o limite por pessoa). */
+export const CONTAR_RESERVAS_FUTURAS = `
+  select count(*)::int as total
+    from reserva.reservas
+   where usuario_id = $1 and status = 'ATIVA' and inicio > now()`;
 
 /**
  * Reservas ativas da sala que conflitam com o período, considerando o intervalo mínimo

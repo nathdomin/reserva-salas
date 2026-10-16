@@ -23,7 +23,8 @@ const ATUALIZAR_CONFIGURACOES = `
          antecedencia_maxima_dias = $7,
          intervalo_entre_reunioes_minutos = $8,
          atualizado_por = $9,
-         desativar_apos_dias_sem_login = $10
+         desativar_apos_dias_sem_login = $10,
+         max_reservas_futuras_por_pessoa = $11
    where id`;
 
 export function createConfiguracoesService(
@@ -71,6 +72,7 @@ export function createConfiguracoesService(
             nova.intervaloEntreReunioesMinutos,
             ator.id,
             nova.desativarAposDiasSemLogin,
+            nova.maxReservasFuturasPorPessoa,
           ]);
           await registrarAuditoria(tx, {
             atorId: ator.id,

@@ -16,6 +16,8 @@ export const configuracoesSchema = z.object({
   intervaloEntreReunioesMinutos: z.number(),
   /** Colaborador sem login há este número de dias é desativado. null = desligado. */
   desativarAposDiasSemLogin: z.number().nullable(),
+  /** Reservas futuras que um colaborador pode ter ao mesmo tempo. null = sem limite. */
+  maxReservasFuturasPorPessoa: z.number().nullable(),
 });
 export type Configuracoes = z.infer<typeof configuracoesSchema>;
 export const configuracoesResponseSchema = z.object({ configuracoes: configuracoesSchema });
@@ -46,6 +48,7 @@ export const atualizarConfiguracoesSchema = z
     antecedenciaMaximaDias: inteiro('a antecedência máxima', 1, 730),
     intervaloEntreReunioesMinutos: inteiro('o intervalo entre reuniões', 0, 60),
     desativarAposDiasSemLogin: inteiro('o número de dias', 15, 365).nullable(),
+    maxReservasFuturasPorPessoa: inteiro('o número de reservas', 1, 500).nullable(),
   })
   .partial()
   .refine((d) => Object.keys(d).length > 0, 'Informe pelo menos uma configuração para alterar.');

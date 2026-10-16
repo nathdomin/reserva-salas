@@ -48,6 +48,8 @@ function paraValores(c: Configuracoes): Valores {
     intervaloEntreReunioesMinutos: String(c.intervaloEntreReunioesMinutos),
     desativarAposDiasSemLogin:
       c.desativarAposDiasSemLogin === null ? '' : String(c.desativarAposDiasSemLogin),
+    maxReservasFuturasPorPessoa:
+      c.maxReservasFuturasPorPessoa === null ? '' : String(c.maxReservasFuturasPorPessoa),
   };
 }
 
@@ -77,6 +79,7 @@ function FormConfiguracoes({ atual }: { atual: Configuracoes }) {
       antecedenciaMaximaDias: numero(v.antecedenciaMaximaDias),
       intervaloEntreReunioesMinutos: numero(v.intervaloEntreReunioesMinutos),
       desativarAposDiasSemLogin: numeroOuNulo(v.desativarAposDiasSemLogin),
+      maxReservasFuturasPorPessoa: numeroOuNulo(v.maxReservasFuturasPorPessoa),
     };
     // Envia só o que mudou.
     const mudancas: AtualizarConfiguracoesInput = {};
@@ -205,6 +208,21 @@ function FormConfiguracoes({ atual }: { atual: Configuracoes }) {
               min={0}
               value={v.intervaloEntreReunioesMinutos}
               onChange={(ev) => alterar({ intervaloEntreReunioesMinutos: ev.target.value })}
+            />
+          </Field>
+          <Field
+            label="Reservas futuras por pessoa"
+            hint="Quantas reservas ainda não começadas cada colaborador pode ter ao mesmo tempo. Administradores não têm limite. Em branco = sem limite."
+            error={e.maxReservasFuturasPorPessoa}
+          >
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={500}
+              placeholder="Sem limite"
+              value={v.maxReservasFuturasPorPessoa}
+              onChange={(ev) => alterar({ maxReservasFuturasPorPessoa: ev.target.value })}
             />
           </Field>
         </div>

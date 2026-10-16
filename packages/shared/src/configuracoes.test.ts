@@ -12,6 +12,7 @@ const PADRAO: Configuracoes = {
   antecedenciaMaximaDias: 120,
   intervaloEntreReunioesMinutos: 0,
   desativarAposDiasSemLogin: 60,
+  maxReservasFuturasPorPessoa: 30,
 };
 
 const campos = (c: Partial<Configuracoes>) =>
@@ -45,6 +46,14 @@ describe('atualizarConfiguracoesSchema', () => {
     expect(atualizarConfiguracoesSchema.safeParse({}).success).toBe(false);
   });
 
+  it('limite de reservas por pessoa: aceita desligar (null) e 1 a 500', () => {
+    for (const valor of [null, 1, 30, 500]) {
+      expect(atualizarConfiguracoesSchema.parse({ maxReservasFuturasPorPessoa: valor })).toEqual({
+        maxReservasFuturasPorPessoa: valor,
+      });
+    }
+  });
+
   it('desativação por falta de uso: aceita desligar (null) e 15 a 365 dias', () => {
     for (const valor of [null, 15, 60, 365]) {
       expect(atualizarConfiguracoesSchema.parse({ desativarAposDiasSemLogin: valor })).toEqual({
@@ -62,6 +71,8 @@ describe('atualizarConfiguracoesSchema', () => {
       { duracaoMinimaMinutos: 2.5 },
       { desativarAposDiasSemLogin: 10 },
       { desativarAposDiasSemLogin: 400 },
+      { maxReservasFuturasPorPessoa: 0 },
+      { maxReservasFuturasPorPessoa: 501 },
     ]) {
       expect(atualizarConfiguracoesSchema.safeParse(dados).success, JSON.stringify(dados)).toBe(
         false,

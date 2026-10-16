@@ -512,6 +512,42 @@ $sql_0006$;
 end
 $migracao$;
 
+-- ---------------------------------------------------------------------
+-- 0007_limite_de_reservas.sql
+-- ---------------------------------------------------------------------
+do $migracao$
+declare
+  aplicado text;
+begin
+  select checksum into aplicado from reserva.migracoes where nome = '0007_limite_de_reservas.sql';
+  if aplicado is not null then
+    if aplicado <> '899ad86acf14f6c3e387f017f8760fac272d6d6839f0fef692b3ccf61789e54e' then
+      raise exception 'A migração 0007_limite_de_reservas.sql foi alterada depois de aplicada.';
+    end if;
+    raise notice 'já aplicada: 0007_limite_de_reservas.sql';
+    return;
+  end if;
+
+  execute $sql_0007$
+-- =====================================================================
+-- 0007 — Limite de reservas futuras por pessoa
+--   Um colaborador pode ter no máximo N reservas ativas que ainda não começaram (padrão 30).
+--   Vale só para criar reservas novas: as que já existem não são canceladas.
+--   null = sem limite. Administradores nunca são limitados.
+-- =====================================================================
+
+alter table reserva.configuracoes
+  add column max_reservas_futuras_por_pessoa integer default 30,
+  add constraint configuracoes_limite_reservas check (
+    max_reservas_futuras_por_pessoa is null or max_reservas_futuras_por_pessoa between 1 and 500
+  );
+$sql_0007$;
+
+  insert into reserva.migracoes (nome, checksum) values ('0007_limite_de_reservas.sql', '899ad86acf14f6c3e387f017f8760fac272d6d6839f0fef692b3ccf61789e54e');
+  raise notice 'aplicada: 0007_limite_de_reservas.sql';
+end
+$migracao$;
+
 commit;
 
 -- Conferência: deve listar todas as migrações.

@@ -35,6 +35,7 @@ const CAMPOS: Record<string, string> = {
   antecedenciaMaximaDias: 'Antecedência máxima (dias)',
   intervaloEntreReunioesMinutos: 'Intervalo entre reuniões (min)',
   desativarAposDiasSemLogin: 'Desativar sem login há (dias)',
+  maxReservasFuturasPorPessoa: 'Reservas futuras por pessoa',
 };
 
 /** Campos técnicos que não ajudam quem lê o histórico. */

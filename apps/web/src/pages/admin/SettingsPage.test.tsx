@@ -68,6 +68,20 @@ describe('configurações', () => {
     expect(corpoEnviado(fetchMock, PATCH)).toEqual({ desativarAposDiasSemLogin: null });
   });
 
+  it('limite de reservas por pessoa: mostra o valor e envia só ele quando alterado', async () => {
+    const fetchMock = mockApi({
+      ...logadoComo(ADMIN),
+      [PATCH]: { body: { configuracoes: { ...CONFIG, maxReservasFuturasPorPessoa: 10 } } },
+    });
+    const salvar = await abrir();
+    const campo = screen.getByLabelText('Reservas futuras por pessoa') as HTMLInputElement;
+    expect(campo.value).toBe('30');
+    fireEvent.change(campo, { target: { value: '10' } });
+    fireEvent.click(salvar);
+    expect(await screen.findByText(/Configurações salvas/)).toBeTruthy();
+    expect(corpoEnviado(fetchMock, PATCH)).toEqual({ maxReservasFuturasPorPessoa: 10 });
+  });
+
   it('valida antes de enviar', async () => {
     const fetchMock = mockApi(logadoComo(ADMIN));
     const salvar = await abrir();

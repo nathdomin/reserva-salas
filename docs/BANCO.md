@@ -157,11 +157,16 @@ Uma única linha (`id = true`), alterada em **Administração → Configuraçõe
 | `intervalo_entre_reunioes_minutos` | 0             | 0 a 60                         |
 | `motivo_visivel_para_todos`        | sim           |                                |
 | `desativar_apos_dias_sem_login`    | 60            | 15 a 365, ou vazio (desligado) |
+| `max_reservas_futuras_por_pessoa`  | 30            | 1 a 500, ou vazio (sem limite) |
 
 Com `desativar_apos_dias_sem_login`, o servidor desativa (de hora em hora e no login) os
 **colaboradores** que não entram há mais dias que o configurado. Administradores nunca são
 desativados por este motivo. As sessões são encerradas, as reservas futuras são mantidas e o
 histórico registra **Usuário desativado por falta de uso**. Reativar a pessoa recomeça a contagem.
+
+Com `max_reservas_futuras_por_pessoa`, um **colaborador** não consegue criar uma reserva nova se
+já tiver esse número de reservas ativas que ainda não começaram (administradores não têm limite).
+As reservas que já existem nunca são canceladas por causa do limite.
 
 ### `migracoes`
 

@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { buttonClasses } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import type { usePanoramaDoDia } from './usePanoramaDoDia';
+import { RecursosSala } from '../salas/RecursosSala';
 
 const MAX_SALAS = 4;
 
@@ -73,6 +74,12 @@ export function LivresAgora({
                   <p className="truncate font-medium">{sala.nome}</p>
                   <p className="text-sm text-ok">livre até {ate}</p>
                 </div>
+                <RecursosSala
+                  recursos={sala.recursos}
+                  compacto
+                  max={3}
+                  className="hidden shrink-0 sm:flex"
+                />
                 <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-canvas px-2 text-xs font-medium text-ink/80">
                   <Users aria-hidden className="size-3.5" />
                   <span className="sr-only">até</span> {sala.capacidade}

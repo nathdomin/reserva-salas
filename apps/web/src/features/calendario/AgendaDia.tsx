@@ -12,6 +12,7 @@ import {
 } from '../../lib/calendario';
 import { ESTILO_MINHA, ESTILO_OCUPADO } from './estilos';
 import { livreAte, livreDesdeNoDia, trechosDaSala } from './livres';
+import { RecursosSala } from '../salas/RecursosSala';
 
 interface AgendaDiaProps {
   data: string;
@@ -30,6 +31,7 @@ interface SalaAgenda {
   id: string;
   nome: string;
   detalhe: string;
+  recursos: string[];
   trechos: TrechoAgenda<Reserva>[];
 }
 
@@ -56,17 +58,23 @@ export function AgendaDia({
   const livreDesde = livreDesdeNoDia(data, hoje, agora, config);
 
   // Salas ativas e, se houver, sala desativada que ainda tem reserva no dia.
-  const mapa = new Map<string, { id: string; nome: string; detalhe: string }>();
+  const mapa = new Map<string, { id: string; nome: string; detalhe: string; recursos: string[] }>();
   for (const s of salas) {
     mapa.set(s.id, {
       id: s.id,
       nome: s.nome,
       detalhe: `${s.localizacao} · até ${s.capacidade} pessoas`,
+      recursos: s.recursos,
     });
   }
   for (const r of doDia) {
     if (!mapa.has(r.sala.id)) {
-      mapa.set(r.sala.id, { id: r.sala.id, nome: r.sala.nome, detalhe: 'Sala desativada' });
+      mapa.set(r.sala.id, {
+        id: r.sala.id,
+        nome: r.sala.nome,
+        detalhe: 'Sala desativada',
+        recursos: [],
+      });
     }
   }
   const lista: SalaAgenda[] = [...mapa.values()]
@@ -167,6 +175,7 @@ export function AgendaDia({
                 {sala.nome}
               </h3>
               <p className="text-sm text-muted">{sala.detalhe}</p>
+              <RecursosSala recursos={sala.recursos} compacto className="mt-2" />
             </header>
             {sala.trechos.length === 0 ? (
               <p className="px-4 py-3 text-sm text-muted">

@@ -14,6 +14,7 @@ import { formatDiaCurto, formatHorario } from '../../lib/format';
 import { errorMessage } from '../../lib/forms';
 import { avisar } from '../../features/avisos/store';
 import { SkeletonLista } from '../../components/ui/Skeleton';
+import { RecursosSala } from '../../features/salas/RecursosSala';
 
 type Painel = { tipo: 'criar' } | { tipo: 'editar'; sala: Sala } | null;
 
@@ -175,13 +176,7 @@ export function RoomsPage() {
               <p className="text-sm text-muted">
                 {s.localizacao}. Até {s.capacidade} pessoas.
               </p>
-              {s.recursos.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Recursos">
-                  {s.recursos.map((r) => (
-                    <Badge key={r}>{r}</Badge>
-                  ))}
-                </div>
-              )}
+              <RecursosSala recursos={s.recursos} className="mt-3" />
               {s.descricao && <p className="mt-3 text-sm">{s.descricao}</p>}
 
               <div className="mt-4 flex flex-wrap gap-2 pt-1">

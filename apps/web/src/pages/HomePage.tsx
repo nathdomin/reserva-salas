@@ -30,7 +30,7 @@ export function HomePage() {
         </h1>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr] [&>*]:min-w-0">
         <ProximaReuniao agora={agora} hoje={hoje} />
         <LivresAgora panorama={panorama} hoje={hoje} />
       </div>
@@ -38,7 +38,7 @@ export function HomePage() {
       <NumerosDoDia panorama={panorama} />
       <Atalhos />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px] [&>*]:min-w-0">
         <Panel
           title="Próximas reuniões"
           actions={

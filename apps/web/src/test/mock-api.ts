@@ -95,6 +95,8 @@ export function logadoComo(usuario: UsuarioSessao): Record<string, Rota> {
     'GET /api/auth/me': { body: { usuario } },
     'GET /api/health': HEALTH_OK,
     'GET /api/reservas/minhas?tipo=proximas&limite=6': { body: { reservas: [] } },
+    // Barra lateral: contador de "Minhas reservas".
+    'GET /api/reservas/minhas?tipo=proximas&limite=10': { body: { reservas: [] } },
     'GET /api/configuracoes': { body: { configuracoes: CONFIG } },
     // Tela inicial: salas e reservas de hoje ("Livres agora" e números do dia).
     'GET /api/salas': { body: { salas: [] } },

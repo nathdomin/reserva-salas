@@ -1,7 +1,8 @@
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { ADMIN, COLABORADOR, logadoComo, mockApi } from '../../test/mock-api';
+import { ADMIN, COLABORADOR, logadoComo, mockApi, reservaMock } from '../../test/mock-api';
 import { renderApp } from '../../test/render';
+import { iniciais } from './UserMenu';
 
 async function menuPrincipal() {
   return screen.findByRole('navigation', { name: 'Menu principal' });
@@ -80,6 +81,36 @@ describe('layout da aplicação', () => {
 
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: 'Menu' })).toBeNull();
+  });
+
+  it('barra lateral: iniciais, contador de reuniões e a próxima reunião no painel "Agora"', async () => {
+    const proxima = reservaMock({
+      inicio: '2099-12-01T13:00:00.000Z',
+      fim: '2099-12-01T14:00:00.000Z',
+    });
+    mockApi({
+      ...logadoComo(COLABORADOR),
+      'GET /api/reservas/minhas?tipo=proximas&limite=10': {
+        body: { reservas: [proxima, { ...proxima, id: 'ee000000-0000-4000-8000-000000000009' }] },
+      },
+      'GET /api/reservas/minhas?tipo=proximas&limite=6': { body: { reservas: [proxima] } },
+    });
+    renderApp('/calendario');
+    const nav = await menuPrincipal();
+    const minhas = within(nav).getByRole('link', { name: 'Minhas reservas' });
+    await waitFor(() => expect(minhas.textContent).toBe('Minhas reservas2'));
+
+    const agora = screen.getAllByRole('region', { name: 'Agora' })[0]!;
+    const link = await within(agora).findByRole('link', { name: /Sua próxima reunião/ });
+    expect(link.getAttribute('href')).toBe(`/reservas/${proxima.id}`);
+    expect(link.textContent).toContain('Sala Azul');
+    expect(screen.getAllByText('CC').length).toBeGreaterThan(0);
+  });
+
+  it('iniciais: primeira e última palavra, sem "da", "de", "dos"…', () => {
+    expect(iniciais('Ana Beatriz da Silva')).toBe('AS');
+    expect(iniciais('caio')).toBe('C');
+    expect(iniciais('  Maria  dos Santos ')).toBe('MS');
   });
 
   it('mostra página de não encontrado para endereço inexistente', async () => {

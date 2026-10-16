@@ -1,11 +1,14 @@
 import { Menu, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
+import logo from '../../assets/logo-Empresa-Empresa.webp';
 import { useSessao } from '../../features/auth/session';
 import { Avisos } from '../../features/avisos/Avisos';
+import { useMinhasReservas } from '../../features/reservas/api';
 import { cn } from '../../lib/cn';
 import { ButtonLink } from '../ui/Button';
 import { BrandMark } from './BrandMark';
+import { PainelAgora } from './PainelAgora';
 import { SideNav } from './SideNav';
 import { UserMenu } from './UserMenu';
 
@@ -16,6 +19,11 @@ export function AppLayout() {
   const abrirMenuRef = useRef<HTMLButtonElement>(null);
   const fecharMenuRef = useRef<HTMLButtonElement>(null);
   const devolverFocoRef = useRef(false);
+
+  // Reuniões futuras de quem está logado, mostradas ao lado de "Minhas reservas".
+  const minhas = useMinhasReservas('proximas', 10);
+  const qtd = minhas.data?.length ?? 0;
+  const contadores = { '/minhas-reservas': qtd === 0 ? undefined : qtd >= 10 ? '9+' : String(qtd) };
 
   /** Fecha o menu pelo botão, pelo fundo ou pelo Esc, devolvendo o foco a quem o abriu. */
   function fecharMenu() {
@@ -90,12 +98,35 @@ export function AppLayout() {
       </header>
 
       {/* Menu lateral (computador) */}
-      <aside className="sticky top-0 hidden h-dvh flex-col gap-8 overflow-y-auto border-r border-line bg-paper px-4 py-5 lg:flex">
-        <Link to="/" aria-label="Início" className="px-1">
-          <BrandMark />
+      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-paper lg:flex">
+        {/* Topo com a marca, no mesmo vermelho da tela de entrada. */}
+        <Link
+          to="/"
+          aria-label="Início"
+          className="relative flex items-center gap-3 overflow-hidden bg-[radial-gradient(120%_140%_at_0%_0%,var(--color-brand)_0%,var(--color-brand-strong)_70%)] px-5 py-5 text-paper"
+        >
+          <img
+            src={logo}
+            alt=""
+            width={68}
+            height={36}
+            className="h-9 w-auto shrink-0 rounded-md bg-paper px-1.5 py-1"
+          />
+          <span className="leading-tight">
+            <span className="block text-base font-bold tracking-tight">MeetKof</span>
+            <span className="block text-xs text-paper/85">Setor administrativo</span>
+          </span>
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -top-8 -right-8 size-24 rounded-full bg-paper/10"
+          />
         </Link>
-        <SideNav perfil={usuario.perfil} />
-        <div className="mt-auto">
+        {/* Em telas baixas só o meio rola: a marca e a pessoa ficam sempre à vista. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-4">
+          <SideNav perfil={usuario.perfil} contadores={contadores} />
+          <PainelAgora usuarioId={usuario.id} />
+        </div>
+        <div className="px-4 pb-4">
           <UserMenu usuario={usuario} />
         </div>
       </aside>
@@ -146,7 +177,11 @@ export function AppLayout() {
               <X aria-hidden className="size-5" />
             </button>
           </div>
-          <SideNav perfil={usuario.perfil} onNavigate={() => setMenuOpen(false)} />
+          <SideNav
+            perfil={usuario.perfil}
+            contadores={contadores}
+            onNavigate={() => setMenuOpen(false)}
+          />
           <div className="mt-auto">
             <UserMenu usuario={usuario} onNavigate={() => setMenuOpen(false)} />
           </div>

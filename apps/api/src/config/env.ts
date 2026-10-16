@@ -75,10 +75,11 @@ const envSchema = z
     SESSION_IDLE_MINUTES: z.coerce.number().int().min(5).max(1440).default(480),
     // ...e, em qualquer caso, após este tempo desde o login.
     SESSION_MAX_HOURS: z.coerce.number().int().min(1).max(168).default(12),
-    // Requisições por minuto, por endereço IP (todas as rotas).
+    // Requisições à API por minuto, por sessão (sem sessão, por endereço IP).
     RATE_LIMIT_MAX: z.coerce.number().int().min(10).max(100_000).default(600),
-    // Tentativas de login por minuto, por endereço IP.
-    LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(10_000).default(10),
+    // Tentativas de login por minuto, por endereço IP. Comporta um escritório inteiro saindo
+    // por um único IP; cada conta já tem o próprio bloqueio após 5 senhas erradas.
+    LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(10_000).default(30),
   })
   .superRefine((env, ctx) => {
     const issue = (pathName: string, message: string) =>

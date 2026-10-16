@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { criarUsuarioTeste, resetDatabase, SENHA_PADRAO } from '../../../test/db';
 import { COOKIE_SESSAO, comSessao, createTestApp, login, TEST_ORIGIN } from '../../../test/helpers';
+import { TROCAS_DE_SENHA_POR_MINUTO } from './routes';
 import { hashSessionToken } from './tokens';
 
 describe('autenticação', () => {
@@ -309,6 +310,20 @@ describe('autenticação', () => {
       const res = await alterar(token, { senhaAtual: usuario.senha, novaSenha: 'curta' });
       expect(res.statusCode).toBe(400);
       expect(res.json().error.details[0].campo).toBe('novaSenha');
+    });
+
+    it('limita as tentativas por pessoa, sem afetar colegas no mesmo IP', async () => {
+      const ana = await criarUsuarioTeste(ctx.database.pool);
+      const bruno = await criarUsuarioTeste(ctx.database.pool);
+      const tokenAna = await login(ctx.app, ana);
+      const tokenBruno = await login(ctx.app, bruno);
+      const errada = { senhaAtual: 'errada-000000', novaSenha: 'nova-senha-123' };
+
+      for (let i = 0; i < TROCAS_DE_SENHA_POR_MINUTO; i++) {
+        expect((await alterar(tokenAna, errada)).statusCode).toBe(400);
+      }
+      expect((await alterar(tokenAna, errada)).statusCode).toBe(429);
+      expect((await alterar(tokenBruno, errada)).statusCode).toBe(400);
     });
 
     it('troca a senha, mantém a sessão atual e encerra as outras', async () => {

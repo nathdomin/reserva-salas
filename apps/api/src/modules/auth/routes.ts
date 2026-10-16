@@ -5,7 +5,7 @@ import {
   type Perfil,
   type UsuarioSessao,
 } from '@reserva/shared';
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import type { Database } from '../../db/client';
 import { AppError } from '../../plugins/errors';
 import { registrarAuditoria } from '../audit/service';
@@ -28,6 +28,8 @@ import {
 export const MAX_TENTATIVAS_LOGIN = 5;
 /** Teto do bloqueio progressivo (1, 2, 4, 8 e no máximo 15 minutos). */
 export const BLOQUEIO_MAXIMO_MINUTOS = 15;
+/** Tentativas de troca da própria senha por minuto, por pessoa (protege a senha atual). */
+export const TROCAS_DE_SENHA_POR_MINUTO = 5;
 
 interface AuthRoutesOptions {
   database: Database;
@@ -55,7 +57,25 @@ const credenciaisInvalidas = () =>
 export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, options) => {
   const { database, sessions, guards } = options;
   const db = database.pool;
-  const rateLimit = { rateLimit: { max: options.loginRateLimitMax, timeWindow: '1 minute' } };
+  // Login: por IP. Cada conta já é protegida pelo bloqueio após 5 senhas erradas; este limite
+  // protege o servidor (o cálculo da senha é caro) e não aceita um cookie qualquer como chave,
+  // senão bastaria trocar o cookie a cada tentativa.
+  const limiteLogin = {
+    rateLimit: {
+      max: options.loginRateLimitMax,
+      timeWindow: '1 minute',
+      keyGenerator: (request: FastifyRequest) => request.ip,
+    },
+  };
+  // Troca de senha: por pessoa, depois de confirmar a sessão (colegas no mesmo IP não se afetam).
+  const limiteTrocaDeSenha = {
+    rateLimit: {
+      max: TROCAS_DE_SENHA_POR_MINUTO,
+      timeWindow: '1 minute',
+      hook: 'preHandler' as const,
+      keyGenerator: (request: FastifyRequest) => usuarioAtual(request).id,
+    },
+  };
   const bloqueioSimulado = createBloqueioSimulado({
     maxTentativas: MAX_TENTATIVAS_LOGIN,
     maxMinutos: BLOQUEIO_MAXIMO_MINUTOS,
@@ -70,7 +90,7 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
     );
   };
 
-  app.post('/login', { config: rateLimit }, async (request, reply) => {
+  app.post('/login', { config: limiteLogin }, async (request, reply) => {
     const { email, senha } = loginSchema.parse(request.body ?? {});
 
     const { rows } = await db.query<UsuarioLoginRow>(BUSCAR_USUARIO_LOGIN, [email]);
@@ -171,7 +191,7 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
 
   app.post(
     '/alterar-senha',
-    { preHandler: guards.requireSessao, config: rateLimit },
+    { preHandler: guards.requireSessao, config: limiteTrocaDeSenha },
     async (request, reply) => {
       const usuario = usuarioAtual(request);
       const { senhaAtual, novaSenha } = alterarSenhaSchema.parse(request.body ?? {});

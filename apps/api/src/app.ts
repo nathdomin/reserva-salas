@@ -90,19 +90,9 @@ export async function buildApp({ env, database }: AppDeps) {
     hsts: env.NODE_ENV === 'production',
   });
 
-  await app.register(rateLimit, {
-    max: env.RATE_LIMIT_MAX,
-    timeWindow: '1 minute',
-    // Só a API conta no limite. Arquivos do site (JS, CSS, fontes) não: uma única abertura
-    // de página baixa vários deles, e o navegador os guarda em cache.
-    allowList: (request) => !request.url.startsWith('/api/'),
-  });
-
   await app.register(cookie);
   app.decorateRequest('usuario', null);
   app.decorateRequest('sessaoId', null);
-
-  registerOriginCheck(app, env.APP_ORIGIN);
 
   const sessions = createSessionService(database.pool, {
     idleMinutes: env.SESSION_IDLE_MINUTES,
@@ -111,6 +101,17 @@ export async function buildApp({ env, database }: AppDeps) {
     secureCookie: env.NODE_ENV === 'production',
   });
   const guards = createAuthGuards(sessions);
+
+  await app.register(rateLimit, {
+    max: env.RATE_LIMIT_MAX,
+    timeWindow: '1 minute',
+    keyGenerator: sessions.rateLimitKey,
+    // Só a API conta no limite. Arquivos do site (JS, CSS, fontes) não: uma única abertura
+    // de página baixa vários deles, e o navegador os guarda em cache.
+    allowList: (request) => !request.url.startsWith('/api/'),
+  });
+
+  registerOriginCheck(app, env.APP_ORIGIN);
 
   // Respostas da API nunca ficam em cache (dados pessoais e de reservas mudam a todo momento).
   app.addHook('onSend', async (request, reply) => {

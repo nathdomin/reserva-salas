@@ -1,4 +1,5 @@
 import type { Perfil, UsuarioSessao } from '@reserva/shared';
+import type { FastifyRequest } from 'fastify';
 import type { Queryable } from '../../db/client';
 import {
   CARREGAR_SESSAO,
@@ -99,6 +100,17 @@ export function createSessionService(db: Queryable, config: SessionConfig) {
     ): Promise<number> {
       const { rowCount } = await q.query(REMOVER_SESSOES_DO_USUARIO, [usuarioId, exceptSessionId]);
       return rowCount ?? 0;
+    },
+
+    /**
+     * Chave do limite de requisições: a sessão do navegador, ou o IP de quem não tem uma.
+     * Na empresa todos saem pelo mesmo IP; contar por IP faria os colegas dividirem a cota.
+     */
+    rateLimitKey(request: FastifyRequest): string {
+      const token = request.cookies[cookieName];
+      return token && isWellFormedSessionToken(token)
+        ? `sessao:${hashSessionToken(token)}`
+        : `ip:${request.ip}`;
     },
 
     async cleanupExpired() {

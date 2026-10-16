@@ -1,5 +1,6 @@
 import {
   loginResponseSchema,
+  sessoesEncerradasResponseSchema,
   sessaoResponseSchema,
   type AlterarSenhaInput,
   type LoginInput,
@@ -82,6 +83,16 @@ export function useLogout() {
     onSettled: () => {
       limparDadosDoUsuario(queryClient);
       queryClient.setQueryData(SESSAO_KEY, null);
+    },
+  });
+}
+
+/** Sai de todos os outros navegadores e aparelhos (este continua conectado). */
+export function useEncerrarOutrasSessoes() {
+  return useMutation({
+    mutationFn: async () => {
+      const data = await apiFetch<unknown>('/auth/encerrar-outras-sessoes', { method: 'POST' });
+      return sessoesEncerradasResponseSchema.parse(data).sessoesEncerradas;
     },
   });
 }

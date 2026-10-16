@@ -79,6 +79,7 @@ export function usuarioAdmin(
     ...base,
     ativo: true,
     bloqueado: false,
+    sessoesAbertas: 0,
     ultimoLoginEm: '2026-10-09T12:00:00.000Z',
     criadoEm: '2026-10-01T12:00:00.000Z',
     ...extra,

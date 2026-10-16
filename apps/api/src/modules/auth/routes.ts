@@ -205,4 +205,22 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
       return reply.status(204).send();
     },
   );
+
+  // A própria pessoa sai dos outros navegadores e aparelhos (ex.: celular perdido).
+  app.post('/encerrar-outras-sessoes', { preHandler: guards.requireAuth }, async (request) => {
+    const usuario = usuarioAtual(request);
+    const sessoesEncerradas = await database.transaction(async (tx) => {
+      const total = await sessions.revokeAllForUser(usuario.id, request.sessaoId, tx);
+      await registrarAuditoria(tx, {
+        atorId: usuario.id,
+        acao: 'SESSOES_ENCERRADAS',
+        entidade: 'usuario',
+        entidadeId: usuario.id,
+        depois: { sessoesEncerradas: total, manteveEsteAparelho: true },
+        ip: request.ip,
+      });
+      return total;
+    });
+    return { sessoesEncerradas };
+  });
 };

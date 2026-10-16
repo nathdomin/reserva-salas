@@ -41,6 +41,7 @@ type UsuarioRow = {
   ativo: boolean;
   bloqueado: boolean;
   trocar_senha: boolean;
+  sessoes_abertas: number;
   ultimo_login_em: Date | null;
   criado_em: Date;
 };
@@ -52,6 +53,7 @@ export function toUsuarioAdmin(row: UsuarioRow): UsuarioAdmin {
     email: row.email,
     perfil: row.perfil,
     trocarSenha: row.trocar_senha,
+    sessoesAbertas: row.sessoes_abertas,
     ativo: row.ativo,
     bloqueado: row.bloqueado,
     ultimoLoginEm: row.ultimo_login_em ? row.ultimo_login_em.toISOString() : null,
@@ -328,6 +330,28 @@ export function createUsersService(database: Database) {
           ip: ator.ip,
         });
         return { modo, reservasCanceladas };
+      });
+    },
+
+    /**
+     * Desconecta a pessoa de todos os navegadores e aparelhos (ex.: celular perdido), sem
+     * desativar a conta: ela entra de novo com a senha. Devolve quantas sessões havia.
+     */
+    async encerrarSessoes(ator: Ator, id: string): Promise<number> {
+      return database.transaction(async (tx) => {
+        const { rows } = await tx.query<UsuarioRow>(BUSCAR_USUARIO_PARA_ALTERAR, [id]);
+        if (!rows[0]) throw naoEncontrado();
+        const { rowCount } = await tx.query(REMOVER_SESSOES_DO_USUARIO, [id, null]);
+        const sessoesEncerradas = rowCount ?? 0;
+        await registrarAuditoria(tx, {
+          atorId: ator.id,
+          acao: 'SESSOES_ENCERRADAS',
+          entidade: 'usuario',
+          entidadeId: id,
+          depois: { sessoesEncerradas },
+          ip: ator.ip,
+        });
+        return sessoesEncerradas;
       });
     },
 

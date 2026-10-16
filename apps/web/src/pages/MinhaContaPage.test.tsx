@@ -68,4 +68,19 @@ describe('Minha conta', () => {
     expect(await screen.findByText('A senha atual não confere.')).toBeTruthy();
     expect(screen.getByLabelText('Senha atual').getAttribute('aria-invalid')).toBe('true');
   });
+
+  it('"Sair dos outros aparelhos" chama a API e confirma quantos foram desconectados', async () => {
+    const fetchMock = mockApi({
+      ...logadoComo(COLABORADOR),
+      'POST /api/auth/encerrar-outras-sessoes': { body: { sessoesEncerradas: 2 } },
+    });
+    renderApp('/minha-conta');
+    fireEvent.click(await screen.findByRole('button', { name: 'Sair dos outros aparelhos' }));
+    expect(await screen.findByText(/2 outros aparelhos foram desconectados/)).toBeTruthy();
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) => url === '/api/auth/encerrar-outras-sessoes' && init?.method === 'POST',
+      ),
+    ).toBe(true);
+  });
 });

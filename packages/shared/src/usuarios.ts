@@ -107,6 +107,9 @@ export const excluirUsuarioResponseSchema = z.object({
 });
 export type ExcluirUsuarioResponse = z.infer<typeof excluirUsuarioResponseSchema>;
 
+/** Resposta de "desconectar de todos os aparelhos". */
+export const sessoesEncerradasResponseSchema = z.object({ sessoesEncerradas: z.number() });
+
 /** Nome exibido no lugar de quem teve a conta excluída. */
 export const NOME_USUARIO_REMOVIDO = 'Usuário removido';
 
@@ -145,6 +148,8 @@ export const usuarioAdminSchema = usuarioSessaoSchema.extend({
   bloqueado: z.boolean(),
   ultimoLoginEm: z.string().nullable(),
   criadoEm: z.string(),
+  /** Em quantos navegadores/aparelhos a pessoa está conectada agora. */
+  sessoesAbertas: z.number().int().default(0),
 });
 export type UsuarioAdmin = z.infer<typeof usuarioAdminSchema>;
 

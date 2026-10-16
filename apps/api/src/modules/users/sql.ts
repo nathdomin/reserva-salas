@@ -1,8 +1,13 @@
-/** Campos devolvidos na gestão de usuários. Nunca inclui senha_hash. */
+/**
+ * Campos devolvidos na gestão de usuários. Nunca inclui senha_hash.
+ * `sessoes_abertas`: em quantos navegadores/aparelhos a pessoa está conectada agora.
+ */
 const CAMPOS_USUARIO = `
   id, nome, email, perfil, ativo,
   (bloqueado_ate is not null and bloqueado_ate > now()) as bloqueado,
-  ultimo_login_em, criado_em, trocar_senha`;
+  ultimo_login_em, criado_em, trocar_senha,
+  (select count(*)::int from reserva.sessoes s
+    where s.usuario_id = usuarios.id and s.expira_em > now()) as sessoes_abertas`;
 
 /** Contas excluídas (anonimizadas) não aparecem: não há mais o que gerenciar nelas. */
 export const LISTAR_USUARIOS = `

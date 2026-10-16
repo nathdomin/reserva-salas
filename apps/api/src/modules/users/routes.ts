@@ -1,11 +1,13 @@
 import {
   atualizarUsuarioSchema,
   criarUsuarioSchema,
+  ERROR_CODES,
   excluirUsuarioSchema,
   redefinirSenhaSchema,
 } from '@reserva/shared';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { AppError } from '../../plugins/errors';
 import { usuarioAtual, type AuthGuards } from '../auth/guards';
 import type { Ator, UsersService } from './service';
 
@@ -50,6 +52,19 @@ export const usersRoutes: FastifyPluginAsync<UsersRoutesOptions> = async (
     const { id } = paramsSchema.parse(request.params);
     const dados = excluirUsuarioSchema.parse(request.body ?? {});
     return users.excluir(ator(request), id, dados);
+  });
+
+  app.post('/:id/encerrar-sessoes', async (request) => {
+    const { id } = paramsSchema.parse(request.params);
+    // O próprio administrador usa "Sair dos outros aparelhos" em Minha conta.
+    if (id === usuarioAtual(request).id) {
+      throw new AppError(
+        409,
+        ERROR_CODES.OPERACAO_NAO_PERMITIDA,
+        'Para a sua própria conta, use "Sair dos outros aparelhos" em Minha conta.',
+      );
+    }
+    return { sessoesEncerradas: await users.encerrarSessoes(ator(request), id) };
   });
 
   app.post('/:id/desbloquear', async (request) => {

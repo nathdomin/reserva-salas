@@ -91,8 +91,14 @@ export function createSessionService(db: Queryable, config: SessionConfig) {
       await db.query(REMOVER_SESSAO, [hashSessionToken(token)]);
     },
 
-    async revokeAllForUser(usuarioId: string, exceptSessionId: string | null = null, q = db) {
-      await q.query(REMOVER_SESSOES_DO_USUARIO, [usuarioId, exceptSessionId]);
+    /** Encerra as sessões do usuário (menos `exceptSessionId`); devolve quantas eram. */
+    async revokeAllForUser(
+      usuarioId: string,
+      exceptSessionId: string | null = null,
+      q = db,
+    ): Promise<number> {
+      const { rowCount } = await q.query(REMOVER_SESSOES_DO_USUARIO, [usuarioId, exceptSessionId]);
+      return rowCount ?? 0;
     },
 
     async cleanupExpired() {

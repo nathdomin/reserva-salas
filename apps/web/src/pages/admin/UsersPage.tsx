@@ -9,7 +9,12 @@ import { Field, Input, Select } from '../../components/ui/Field';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Panel } from '../../components/ui/Panel';
 import { useSessao } from '../../features/auth/session';
-import { useAtualizarUsuario, useDesbloquearUsuario, useUsuarios } from '../../features/users/api';
+import {
+  useAtualizarUsuario,
+  useDesbloquearUsuario,
+  useEncerrarSessoes,
+  useUsuarios,
+} from '../../features/users/api';
 import { ExcluirUsuario } from '../../features/users/ExcluirUsuario';
 import { ResetPasswordForm, UserForm } from '../../features/users/UserForms';
 import { ApiError } from '../../lib/api';
@@ -45,6 +50,7 @@ export function UsersPage() {
   const usuarios = useUsuarios();
   const atualizar = useAtualizarUsuario();
   const desbloquear = useDesbloquearUsuario();
+  const encerrarSessoes = useEncerrarSessoes();
 
   const [painel, setPainel] = useState<Painel>(null);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
@@ -260,6 +266,8 @@ export function UsersPage() {
                       {u.ultimoLoginEm
                         ? `Último acesso: ${formatDateTime(u.ultimoLoginEm)}`
                         : 'Ainda não entrou no sistema'}
+                      {u.sessoesAbertas > 0 &&
+                        ` · conectado(a) em ${u.sessoesAbertas === 1 ? '1 aparelho' : `${u.sessoesAbertas} aparelhos`}`}
                     </p>
                   </div>
 
@@ -288,6 +296,26 @@ export function UsersPage() {
                       >
                         Editar
                       </Button>
+                      {!ehVoce && u.sessoesAbertas > 0 && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={encerrarSessoes.isPending}
+                          onClick={() => {
+                            setErroAcao(null);
+                            encerrarSessoes.mutate(u.id, {
+                              onSuccess: () =>
+                                avisar(
+                                  `${u.nome} foi desconectado(a) de todos os aparelhos.`,
+                                  'A conta continua ativa: a pessoa entra de novo com a senha.',
+                                ),
+                              onError: (error) => setErroAcao(errorMessage(error)),
+                            });
+                          }}
+                        >
+                          Desconectar
+                        </Button>
+                      )}
                       {u.bloqueado && (
                         <Button
                           size="sm"

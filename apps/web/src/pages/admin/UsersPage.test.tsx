@@ -12,7 +12,7 @@ import { renderApp } from '../../test/render';
 
 const lista = [
   usuarioAdmin(ADMIN),
-  usuarioAdmin(COLABORADOR, { bloqueado: true }),
+  usuarioAdmin(COLABORADOR, { bloqueado: true, sessoesAbertas: 2 }),
   usuarioAdmin(
     {
       id: '6f1c2b1e-3333-4a7b-9c3d-000000000003',
@@ -134,6 +134,31 @@ describe('Usuários (administrador)', () => {
       confirmacao: 'caio colaborador',
       reservasFuturas: 'cancelar',
     });
+  });
+
+  it('mostra em quantos aparelhos a pessoa está conectada e permite desconectá-la', async () => {
+    const fetchMock = mockApi(
+      rotas({
+        [`POST /api/admin/usuarios/${COLABORADOR.id}/encerrar-sessoes`]: {
+          body: { sessoesEncerradas: 2 },
+        },
+      }),
+    );
+    const listaEl = await abrirPagina();
+    const linhaCaio = within(listaEl).getByText('Caio Colaborador').closest('li')!;
+    expect(within(linhaCaio).getByText(/conectado\(a\) em 2 aparelhos/)).toBeTruthy();
+    const minhaLinha = within(listaEl).getByText('Ana Admin').closest('li')!;
+    expect(within(minhaLinha).queryByRole('button', { name: 'Desconectar' })).toBeNull();
+
+    fireEvent.click(within(linhaCaio).getByRole('button', { name: 'Desconectar' }));
+    expect(await screen.findByText(/Caio Colaborador foi desconectado/)).toBeTruthy();
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) =>
+          url === `/api/admin/usuarios/${COLABORADOR.id}/encerrar-sessoes` &&
+          init?.method === 'POST',
+      ),
+    ).toBe(true);
   });
 
   it('o próprio administrador não tem as opções de desativar nem redefinir senha', async () => {

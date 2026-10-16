@@ -1,5 +1,6 @@
 import {
   excluirUsuarioResponseSchema,
+  sessoesEncerradasResponseSchema,
   type ExcluirUsuarioInput,
   atualizarUsuarioResponseSchema,
   listaUsuariosResponseSchema,
@@ -65,6 +66,20 @@ export function useExcluirUsuario() {
         body: JSON.stringify(dados),
       });
       return excluirUsuarioResponseSchema.parse(data);
+    },
+    onSuccess: invalidar,
+  });
+}
+
+export function useEncerrarSessoes() {
+  const invalidar = useInvalidarUsuarios();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const data = await apiFetch<unknown>(
+        `/admin/usuarios/${encodeURIComponent(id)}/encerrar-sessoes`,
+        { method: 'POST' },
+      );
+      return sessoesEncerradasResponseSchema.parse(data).sessoesEncerradas;
     },
     onSuccess: invalidar,
   });

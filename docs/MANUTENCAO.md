@@ -183,7 +183,8 @@ restaure sem `--substituir`.
 ### Senhas das pessoas
 
 - Esquecimento: um administrador usa **Redefinir senha** em **Administração → Usuários** (também
-  desbloqueia a conta e encerra as sessões da pessoa).
+  desbloqueia a conta e encerra as sessões da pessoa). No próximo acesso, a pessoa é obrigada a
+  trocar a senha provisória por uma própria.
 - Administrador único sem acesso: `npm run admin:create -- --force` no servidor
   ([INSTALACAO.md](INSTALACAO.md#4-criar-o-primeiro-administrador)).
 - Quem sai da empresa: **desative** o usuário no mesmo dia. As sessões dele são encerradas e o

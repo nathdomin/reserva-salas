@@ -119,8 +119,8 @@ intermediários (Cloudflare e o proxy dele), configurados em `TRUST_PROXY=2`. Pa
 ## Liberar para a equipe
 
 Cadastre cada pessoa em **Administração → Usuários** e envie o endereço e a senha inicial por um
-canal seguro (pessoalmente ou mensagem direta, nunca num grupo). Cada pessoa troca a senha em
-**Minha conta**.
+canal seguro (pessoalmente ou mensagem direta, nunca num grupo). No primeiro acesso, o sistema
+obriga cada pessoa a criar a própria senha.
 
 ## Atualizar o sistema
 

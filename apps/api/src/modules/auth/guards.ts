@@ -4,8 +4,11 @@ import { AppError } from '../../plugins/errors';
 import type { SessionService } from './session';
 
 export function createAuthGuards(sessions: SessionService) {
-  /** Exige uma sessão válida. Toda a verificação acontece no backend. */
-  async function requireAuth(request: FastifyRequest): Promise<void> {
+  /**
+   * Exige uma sessão válida, mas aceita quem ainda precisa trocar a senha provisória.
+   * Use só nas rotas que essa pessoa precisa para trocá-la (/auth/me e /auth/alterar-senha).
+   */
+  async function requireSessao(request: FastifyRequest): Promise<void> {
     const session = await sessions.load(request.cookies[sessions.cookieName]);
     if (!session) {
       throw new AppError(
@@ -16,6 +19,21 @@ export function createAuthGuards(sessions: SessionService) {
     }
     request.usuario = session.usuario;
     request.sessaoId = session.id;
+  }
+
+  /**
+   * Exige uma sessão válida de quem já escolheu a própria senha. Toda a verificação
+   * acontece no backend: com a senha definida pelo administrador, nada além da troca funciona.
+   */
+  async function requireAuth(request: FastifyRequest): Promise<void> {
+    await requireSessao(request);
+    if (request.usuario?.trocarSenha) {
+      throw new AppError(
+        403,
+        ERROR_CODES.TROCA_DE_SENHA_OBRIGATORIA,
+        'Antes de continuar, escolha uma senha nova em "Trocar senha".',
+      );
+    }
   }
 
   /** Exige sessão válida E perfil de administrador (lido do banco a cada requisição). */
@@ -30,7 +48,7 @@ export function createAuthGuards(sessions: SessionService) {
     }
   }
 
-  return { requireAuth, requireAdmin };
+  return { requireSessao, requireAuth, requireAdmin };
 }
 
 export type AuthGuards = ReturnType<typeof createAuthGuards>;

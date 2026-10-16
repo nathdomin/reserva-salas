@@ -59,6 +59,7 @@ export const ADMIN: UsuarioSessao = {
   nome: 'Ana Admin',
   email: 'ana@empresa.com',
   perfil: 'ADMIN',
+  trocarSenha: false,
 };
 
 export const COLABORADOR: UsuarioSessao = {
@@ -66,10 +67,15 @@ export const COLABORADOR: UsuarioSessao = {
   nome: 'Caio Colaborador',
   email: 'caio@empresa.com',
   perfil: 'COLABORADOR',
+  trocarSenha: false,
 };
 
-export function usuarioAdmin(base: UsuarioSessao, extra: Partial<UsuarioAdmin> = {}): UsuarioAdmin {
+export function usuarioAdmin(
+  base: Omit<UsuarioSessao, 'trocarSenha'> & { trocarSenha?: boolean },
+  extra: Partial<UsuarioAdmin> = {},
+): UsuarioAdmin {
   return {
+    trocarSenha: false,
     ...base,
     ativo: true,
     bloqueado: false,

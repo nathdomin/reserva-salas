@@ -27,7 +27,14 @@ describe('autenticação', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.json()).toEqual({
-        usuario: { id: usuario.id, nome: 'Ana Souza', email: usuario.email, perfil: 'COLABORADOR' },
+        usuario: {
+          id: usuario.id,
+          nome: 'Ana Souza',
+          email: usuario.email,
+          perfil: 'COLABORADOR',
+          trocarSenha: false,
+        },
+        tentativasSemSucesso: 0,
       });
       const cookie = res.cookies.find((c) => c.name === COOKIE_SESSAO);
       expect(cookie).toBeDefined();

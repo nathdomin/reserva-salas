@@ -2,7 +2,7 @@
 const CAMPOS_USUARIO = `
   id, nome, email, perfil, ativo,
   (bloqueado_ate is not null and bloqueado_ate > now()) as bloqueado,
-  ultimo_login_em, criado_em`;
+  ultimo_login_em, criado_em, trocar_senha`;
 
 /** Contas excluídas (anonimizadas) não aparecem: não há mais o que gerenciar nelas. */
 export const LISTAR_USUARIOS = `
@@ -26,9 +26,10 @@ export const BUSCAR_USUARIO_PARA_ALTERAR = `
 export const BUSCAR_ID_POR_EMAIL = `
   select id from reserva.usuarios where email = $1`;
 
+/** $5 = precisa trocar a senha no primeiro acesso (conta criada pelo administrador). */
 export const CRIAR_USUARIO = `
-  insert into reserva.usuarios (nome, email, perfil, senha_hash)
-  values ($1, $2, $3::reserva.perfil, $4)
+  insert into reserva.usuarios (nome, email, perfil, senha_hash, trocar_senha)
+  values ($1, $2, $3::reserva.perfil, $4, $5)
   returning ${CAMPOS_USUARIO}`;
 
 /** Campos null não são alterados. Reativar recomeça a contagem de dias sem uso. */
@@ -42,10 +43,11 @@ export const ATUALIZAR_USUARIO = `
    where id = $1
   returning ${CAMPOS_USUARIO}`;
 
+/** O administrador conhece a senha nova: a pessoa precisa trocá-la ao entrar. */
 export const REDEFINIR_SENHA = `
   update reserva.usuarios
      set senha_hash = $2, senha_alterada_em = now(), tentativas_falhas = 0,
-         bloqueios_seguidos = 0, bloqueado_ate = null
+         bloqueios_seguidos = 0, bloqueado_ate = null, trocar_senha = true
    where id = $1`;
 
 /** Usado pelo comando do terminal para recuperar o acesso de administrador. */
@@ -53,7 +55,7 @@ export const PROMOVER_E_REDEFINIR = `
   update reserva.usuarios
      set nome = $2, perfil = 'ADMIN', ativo = true, senha_hash = $3,
          senha_alterada_em = now(), tentativas_falhas = 0, bloqueios_seguidos = 0,
-         bloqueado_ate = null,
+         bloqueado_ate = null, trocar_senha = false,
          ativado_em = case when ativo then ativado_em else now() end
    where id = $1
   returning ${CAMPOS_USUARIO}`;

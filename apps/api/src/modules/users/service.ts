@@ -40,6 +40,7 @@ type UsuarioRow = {
   perfil: Perfil;
   ativo: boolean;
   bloqueado: boolean;
+  trocar_senha: boolean;
   ultimo_login_em: Date | null;
   criado_em: Date;
 };
@@ -50,6 +51,7 @@ export function toUsuarioAdmin(row: UsuarioRow): UsuarioAdmin {
     nome: row.nome,
     email: row.email,
     perfil: row.perfil,
+    trocarSenha: row.trocar_senha,
     ativo: row.ativo,
     bloqueado: row.bloqueado,
     ultimoLoginEm: row.ultimo_login_em ? row.ultimo_login_em.toISOString() : null,
@@ -150,6 +152,7 @@ export function createUsersService(database: Database) {
             dados.email,
             dados.perfil,
             senhaHash,
+            true,
           ]);
           const usuario = toUsuarioAdmin(rows[0]!);
           await registrarAuditoria(tx, {
@@ -461,6 +464,7 @@ export async function criarAdministrador(
       dados.email,
       'ADMIN',
       senhaHash,
+      false,
     ]);
     const usuario = toUsuarioAdmin(rows[0]!);
     await registrarAuditoria(tx, {

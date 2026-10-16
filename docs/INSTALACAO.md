@@ -100,7 +100,8 @@ Tudo pela própria tela, sem mexer no código:
    (televisão, projetor, videoconferência... ou outros, separados por vírgula) e descrição.
 2. **Administração → Usuários → Novo usuário**: nome, e-mail corporativo, perfil
    (Colaborador ou Administrador) e uma senha inicial. Informe a senha à pessoa por um canal
-   seguro; ela pode trocá-la em **Minha conta**.
+   seguro. No primeiro acesso, o sistema obriga a pessoa a criar a própria senha antes de usar
+   qualquer tela (o administrador não fica sabendo a senha de ninguém).
 3. **Administração → Configurações**: horário de funcionamento, intervalos, durações,
    antecedência máxima, intervalo entre reuniões e se o motivo das reuniões é visível a todos.
 

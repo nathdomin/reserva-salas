@@ -1,6 +1,7 @@
 import { ShieldAlert } from 'lucide-react';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { useSessao } from '../../features/auth/session';
+import { TrocarSenhaObrigatoriaPage } from '../../pages/TrocarSenhaObrigatoriaPage';
 import { Alert } from '../ui/Alert';
 import { Button, ButtonLink } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
@@ -55,6 +56,9 @@ export function RequireAuth() {
     const destino = voltar === '/' ? '/login' : `/login?voltar=${encodeURIComponent(voltar)}`;
     return <Navigate to={destino} replace />;
   }
+
+  // Senha definida pelo administrador: nada além da troca, em qualquer endereço.
+  if (usuario.trocarSenha) return <TrocarSenhaObrigatoriaPage usuario={usuario} />;
 
   return <Outlet />;
 }

@@ -463,6 +463,55 @@ $sql_0005$;
 end
 $migracao$;
 
+-- ---------------------------------------------------------------------
+-- 0006_troca_de_senha_obrigatoria.sql
+-- ---------------------------------------------------------------------
+do $migracao$
+declare
+  aplicado text;
+begin
+  select checksum into aplicado from reserva.migracoes where nome = '0006_troca_de_senha_obrigatoria.sql';
+  if aplicado is not null then
+    if aplicado <> '267d9545ed0e3d197074d503f4e269e9d0ce8bb5b17046d61d849afb0c36d6ec' then
+      raise exception 'A migração 0006_troca_de_senha_obrigatoria.sql foi alterada depois de aplicada.';
+    end if;
+    raise notice 'já aplicada: 0006_troca_de_senha_obrigatoria.sql';
+    return;
+  end if;
+
+  execute $sql_0006$
+-- =====================================================================
+-- 0006 — Troca de senha obrigatória no primeiro acesso
+--   Quando o administrador cria a conta ou redefine a senha, ele conhece a senha da pessoa.
+--   Com trocar_senha = true, a pessoa só consegue usar o sistema depois de escolher a
+--   própria senha (a API recusa as outras rotas até lá).
+-- =====================================================================
+
+alter table reserva.usuarios
+  add column trocar_senha boolean not null default false;
+
+-- Contas que já existem: precisa trocar quem ainda usa a senha definida pelo administrador,
+-- isto é, cujo último evento de senha no histórico foi a criação da conta ou uma
+-- redefinição pelo administrador (e não uma troca feita pela própria pessoa ou pelo
+-- comando do terminal). Conta sem nenhum desses eventos não é alterada.
+update reserva.usuarios u
+   set trocar_senha = true
+ where u.removido_em is null
+   and (select a.acao
+          from reserva.auditoria a
+         where a.entidade = 'usuario'
+           and a.entidade_id = u.id::text
+           and a.acao in ('USUARIO_CRIADO', 'SENHA_REDEFINIDA', 'SENHA_ALTERADA',
+                          'ADMIN_CRIADO_TERMINAL', 'ADMIN_RECUPERADO_TERMINAL')
+         order by a.id desc
+         limit 1) in ('USUARIO_CRIADO', 'SENHA_REDEFINIDA');
+$sql_0006$;
+
+  insert into reserva.migracoes (nome, checksum) values ('0006_troca_de_senha_obrigatoria.sql', '267d9545ed0e3d197074d503f4e269e9d0ce8bb5b17046d61d849afb0c36d6ec');
+  raise notice 'aplicada: 0006_troca_de_senha_obrigatoria.sql';
+end
+$migracao$;
+
 commit;
 
 -- Conferência: deve listar todas as migrações.

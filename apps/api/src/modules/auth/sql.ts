@@ -9,7 +9,7 @@
  * rotina periódica (ex.: servidor desligado nesse meio-tempo). Mesma regra de DESATIVAR_SEM_USO.
  */
 export const BUSCAR_USUARIO_LOGIN = `
-  select u.id, u.nome, u.email, u.perfil, u.ativo, u.senha_hash,
+  select u.id, u.nome, u.email, u.perfil, u.ativo, u.senha_hash, u.trocar_senha,
          (u.bloqueado_ate is not null and u.bloqueado_ate > now()) as bloqueado,
          ceil(extract(epoch from (u.bloqueado_ate - now())) / 60)::int as minutos_bloqueio,
          coalesce(u.perfil <> 'ADMIN'
@@ -80,7 +80,7 @@ export const BUSCAR_HASH_SENHA = `
 export const ALTERAR_SENHA = `
   update reserva.usuarios
      set senha_hash = $2, senha_alterada_em = now(), tentativas_falhas = 0,
-         bloqueios_seguidos = 0, bloqueado_ate = null
+         bloqueios_seguidos = 0, bloqueado_ate = null, trocar_senha = false
    where id = $1`;
 
 /** $3 = tempo de inatividade (min). */
@@ -105,7 +105,7 @@ export const CARREGAR_SESSAO = `
        and criado_em > now() - make_interval(hours => $3::int)
        and ultimo_uso_em < now() - interval '5 minutes'
   )
-  select u.id, u.nome, u.email, u.perfil
+  select u.id, u.nome, u.email, u.perfil, u.trocar_senha
     from reserva.sessoes s
     join reserva.usuarios u on u.id = s.usuario_id
    where s.id = $1

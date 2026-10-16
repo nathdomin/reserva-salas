@@ -127,6 +127,8 @@ export const usuarioSessaoSchema = z.object({
   nome: z.string(),
   email: z.string(),
   perfil: perfilSchema,
+  /** Precisa escolher uma senha própria antes de usar o sistema (senha definida pelo admin). */
+  trocarSenha: z.boolean().default(false),
 });
 export type UsuarioSessao = z.infer<typeof usuarioSessaoSchema>;
 

@@ -74,6 +74,34 @@ describe('login e proteção de rotas', () => {
     expect(screen.queryByText(/tentativa.* de entrar na sua conta/)).toBeNull();
   });
 
+  it('com a senha do administrador, só mostra a troca de senha e depois libera o sistema', async () => {
+    const fetchMock = mockApi({
+      ...logadoComo({ ...COLABORADOR, trocarSenha: true }),
+      'POST /api/auth/alterar-senha': { status: 204 },
+    });
+    const { location } = renderApp('/calendario');
+    expect(await screen.findByRole('heading', { name: 'Escolha a sua senha' })).toBeTruthy();
+    expect(screen.queryByRole('navigation', { name: 'Menu principal' })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('Senha recebida do administrador'), {
+      target: { value: 'senha-do-admin-1' },
+    });
+    fireEvent.change(screen.getByLabelText('Nova senha'), {
+      target: { value: 'minha-senha-nova-1' },
+    });
+    fireEvent.change(screen.getByLabelText('Confirme a nova senha'), {
+      target: { value: 'minha-senha-nova-1' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar e continuar' }));
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Calendário' })).toBeTruthy();
+    expect(location.pathname).toBe('/calendario');
+    expect(corpoEnviado(fetchMock, 'POST /api/auth/alterar-senha')).toEqual({
+      senhaAtual: 'senha-do-admin-1',
+      novaSenha: 'minha-senha-nova-1',
+    });
+  });
+
   it('credenciais erradas mostram a mensagem da API e limpam a senha', async () => {
     mockApi({
       'GET /api/auth/me': SEM_SESSAO,

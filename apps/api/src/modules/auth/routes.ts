@@ -44,6 +44,7 @@ type UsuarioLoginRow = {
   ativo: boolean;
   senha_hash: string;
   bloqueado: boolean;
+  trocar_senha: boolean;
   minutos_bloqueio: number | null;
   sem_uso: boolean;
 };
@@ -150,6 +151,7 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
       nome: usuario.nome,
       email: usuario.email,
       perfil: usuario.perfil,
+      trocarSenha: usuario.trocar_senha,
     };
     reply.setCookie(sessions.cookieName, token, sessions.cookieOptions);
     // Senhas erradas desde o último acesso: a pessoa é avisada (pode ser alguém tentando).
@@ -162,14 +164,14 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
     return reply.status(204).send();
   });
 
-  app.get('/me', { preHandler: guards.requireAuth }, async (request, reply) => {
+  app.get('/me', { preHandler: guards.requireSessao }, async (request, reply) => {
     reply.header('cache-control', 'no-store');
     return { usuario: usuarioAtual(request) };
   });
 
   app.post(
     '/alterar-senha',
-    { preHandler: guards.requireAuth, config: rateLimit },
+    { preHandler: guards.requireSessao, config: rateLimit },
     async (request, reply) => {
       const usuario = usuarioAtual(request);
       const { senhaAtual, novaSenha } = alterarSenhaSchema.parse(request.body ?? {});

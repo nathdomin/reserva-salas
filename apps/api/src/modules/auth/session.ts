@@ -65,13 +65,25 @@ export function createSessionService(db: Queryable, config: SessionConfig) {
     async load(token: string | undefined): Promise<{ usuario: UsuarioSessao; id: string } | null> {
       if (!token || !isWellFormedSessionToken(token)) return null;
       const id = hashSessionToken(token);
-      const { rows } = await db.query<{ id: string; nome: string; email: string; perfil: Perfil }>(
-        CARREGAR_SESSAO,
-        [id, config.idleMinutes, config.maxHours],
-      );
+      const { rows } = await db.query<{
+        id: string;
+        nome: string;
+        email: string;
+        perfil: Perfil;
+        trocar_senha: boolean;
+      }>(CARREGAR_SESSAO, [id, config.idleMinutes, config.maxHours]);
       const row = rows[0];
       if (!row) return null;
-      return { id, usuario: { id: row.id, nome: row.nome, email: row.email, perfil: row.perfil } };
+      return {
+        id,
+        usuario: {
+          id: row.id,
+          nome: row.nome,
+          email: row.email,
+          perfil: row.perfil,
+          trocarSenha: row.trocar_senha,
+        },
+      };
     },
 
     async revokeToken(token: string | undefined) {

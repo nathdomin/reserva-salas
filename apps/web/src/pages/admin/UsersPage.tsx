@@ -251,6 +251,9 @@ export function UsersPage() {
                       </Badge>
                       {!u.ativo && <Badge tone="muted">Inativo</Badge>}
                       {u.bloqueado && <Badge tone="warn">Bloqueado por tentativas</Badge>}
+                      {u.ativo && u.trocarSenha && (
+                        <Badge tone="muted">Ainda não criou a própria senha</Badge>
+                      )}
                     </div>
                     <p className="mt-0.5 truncate text-sm text-muted">{u.email}</p>
                     <p className="mt-0.5 text-xs text-muted">

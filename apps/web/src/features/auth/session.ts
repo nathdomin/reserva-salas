@@ -87,8 +87,15 @@ export function useLogout() {
 }
 
 export function useAlterarSenha() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: AlterarSenhaInput) =>
       apiFetch<void>('/auth/alterar-senha', { method: 'POST', body: JSON.stringify(input) }),
+    // A senha agora é da própria pessoa: libera o uso do sistema (se estava pendente).
+    onSuccess: () => {
+      queryClient.setQueryData<UsuarioSessao | null>(SESSAO_KEY, (atual) =>
+        atual ? { ...atual, trocarSenha: false } : atual,
+      );
+    },
   });
 }

@@ -6,7 +6,7 @@ import { Avisos } from '../../features/avisos/Avisos';
 import { useMinhasReservas } from '../../features/reservas/api';
 import { cn } from '../../lib/cn';
 import { ButtonLink } from '../ui/Button';
-import { AssinaturaEmpresa, BrandMark } from './BrandMark';
+import { BrandMark } from './BrandMark';
 import { PainelAgora } from './PainelAgora';
 import { SideNav } from './SideNav';
 import { UserMenu } from './UserMenu';
@@ -98,12 +98,11 @@ export function AppLayout() {
 
       {/* Menu lateral (computador) */}
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-paper lg:flex">
-        {/* Topo: ícone e nome do MeetKof, com o logo da empresa como assinatura. */}
-        <div className="flex flex-col gap-2.5 border-b border-line px-5 py-5">
-          <Link to="/" aria-label="Início" className="w-fit rounded-md">
-            <BrandMark tamanho="md" />
+        {/* Topo: ícone e nome do MeetKof, com o setor logo abaixo do nome. */}
+        <div className="border-b border-line px-5 py-5">
+          <Link to="/" aria-label="Início" className="block w-fit rounded-md">
+            <BrandMark tamanho="md" subtitulo />
           </Link>
-          <AssinaturaEmpresa />
         </div>
         {/* Em telas baixas só o meio rola: a marca e a pessoa ficam sempre à vista. */}
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-4">
@@ -166,9 +165,8 @@ export function AppLayout() {
             contadores={contadores}
             onNavigate={() => setMenuOpen(false)}
           />
-          <div className="mt-auto flex flex-col gap-4">
+          <div className="mt-auto">
             <UserMenu usuario={usuario} onNavigate={() => setMenuOpen(false)} />
-            <AssinaturaEmpresa className="border-t border-line px-2 pt-4" />
           </div>
         </div>
       </div>

@@ -78,7 +78,10 @@ banco que **só lê** (`reserva_backup`).
    | ------------- | ---------------------- | ------------------------------------------------------------------------------------ |
    | **Secrets**   | `BACKUP_DATABASE_URL`  | `postgresql://reserva_backup.<id-do-projeto>:<senha>@<host-do-pooler>:5432/postgres` |
    | **Variables** | `BACKUP_AGE_RECIPIENT` | A chave pública (`age1...`)                                                          |
-   | **Variables** | `APP_URL`              | O endereço do sistema no Render (ex.: `https://reserva-salas.onrender.com`)          |
+   | **Secrets**   | `APP_URL`              | O endereço do sistema no Render (ex.: `https://reserva-salas.onrender.com`)          |
+
+   O `APP_URL` fica em **Secrets** (e não em Variables) para o endereço não aparecer nos logs do
+   Actions, que são públicos quando o repositório é público.
 
    O `<id-do-projeto>` e o `<host-do-pooler>` são os mesmos do `DATABASE_URL` do `.env`.
 

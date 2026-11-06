@@ -32,10 +32,10 @@ jobs:
     steps:
       - name: Abrir /api/health
         env:
-          APP_URL: ${{ vars.APP_URL }}
+          APP_URL: ${{ secrets.APP_URL }}
         run: |
           if [ -z "$APP_URL" ]; then
-            echo "::error::Defina a variável APP_URL (Settings > Secrets and variables > Actions > Variables)."
+            echo "::error::Defina o segredo APP_URL (Settings > Secrets and variables > Actions > Secrets)."
             exit 1
           fi
           # No plano gratuito o Render pode levar ~1 minuto para acordar.
@@ -54,11 +54,11 @@ jobs:
         env:
           BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
           BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
-          APP_URL: ${{ vars.APP_URL }}
+          APP_URL: ${{ secrets.APP_URL }}
         run: |
           falta=0
           [ -n "$BACKUP_DATABASE_URL" ] || { echo "::error::Falta o segredo BACKUP_DATABASE_URL."; falta=1; }
-          [ -n "$APP_URL" ] || { echo "::error::Falta a variável APP_URL."; falta=1; }
+          [ -n "$APP_URL" ] || { echo "::error::Falta o segredo APP_URL."; falta=1; }
           case "$BACKUP_AGE_RECIPIENT" in
             age1*) ;;
             *) echo "::error::A variável BACKUP_AGE_RECIPIENT deve ser a chave pública do age (começa com age1)."; falta=1 ;;
@@ -84,7 +84,7 @@ jobs:
         id: backup
         env:
           NODE_ENV: production
-          APP_ORIGIN: ${{ vars.APP_URL }}
+          APP_ORIGIN: ${{ secrets.APP_URL }}
           DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
           DATABASE_SSL: verify-full
           DATABASE_SSL_CA: certs/supabase-ca.crt

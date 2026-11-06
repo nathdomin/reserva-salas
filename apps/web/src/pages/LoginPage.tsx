@@ -3,7 +3,6 @@ import { useState, type FormEvent } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router';
 import { destinoSeguro } from '../components/auth/guards';
 import { BrandMark } from '../components/layout/BrandMark';
-import logo from '../assets/logo-Empresa-Empresa.webp';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { Field, Input } from '../components/ui/Field';
@@ -78,14 +77,6 @@ export function LoginPage() {
 
       {/* Formulário: cartão sobre a faixa no celular; coluna limpa no computador. */}
       <div className="relative -mt-8 px-4 pb-10 lg:mt-0 lg:flex lg:flex-col lg:justify-center lg:px-18">
-        {/* Logo oficial no lado branco, com respiro (onde ele aparece do jeito certo). */}
-        <img
-          src={logo}
-          alt="Empresa"
-          width={84}
-          height={44}
-          className="absolute top-12 left-18 hidden h-11 w-auto lg:block"
-        />
         <div className="mx-auto w-full max-w-sm animate-subir rounded-xl border border-line bg-paper p-6 shadow-card lg:mx-0 lg:border-0 lg:p-0 lg:shadow-none">
           <h1 className="text-2xl font-semibold tracking-tight">Entrar</h1>
           <p className="mt-1 text-md text-muted">Use seu e-mail corporativo e sua senha.</p>
@@ -127,13 +118,6 @@ export function LoginPage() {
           Não tem acesso ou esqueceu a senha? Fale com o administrador do sistema.
         </p>
         <p className="mt-8 flex items-center justify-center gap-2.5 text-xs text-muted lg:hidden">
-          <img
-            src={logo}
-            alt="Empresa"
-            width={50}
-            height={26}
-            className="h-[26px] w-auto"
-          />
           Setor administrativo
         </p>
       </div>

@@ -4,7 +4,7 @@ import { cn } from '../../lib/cn';
 /**
  * Ícone do MeetKof: os "blocos de reserva" do calendário (uma reserva, um horário
  * ocupado e um livre). Invertido: quadrado branco com blocos vermelhos, para fundo vermelho.
- * É desenho próprio do sistema; o logo da Empresa (no Login) nunca é alterado.
+ * É desenho próprio do sistema.
  */
 export function IconeMeetKof({
   className,
